@@ -4,7 +4,7 @@ services:
 
   frontend:
     build:
-      context: ./versechat
+      context: ./versechat-ui
       dockerfile: Dockerfile.dev
 
     depends_on:
@@ -15,7 +15,7 @@ services:
 
     volumes:
       - type: bind
-        source: ./versechat
+        source: ./versechat-ui
         target: /app/
     networks:
       - interservice_network
@@ -24,15 +24,40 @@ services:
     build:
       context: ./versechat-backend
       dockerfile: Dockerfile.dev
+
+    depends_on:
+      - db
+      
     ports:
       - "8000:8000"
     volumes:
       - type: bind
         source: ./versechat-backend
         target: /app/
+    env_file:
+      - .env.dev # change this to your .env file
     networks:
       - interservice_network
 
+  db:
+    image: postgres:18
+
+    volumes:
+      - db_data:/var/lib/postgresql
+
+    env_file:
+      - .env.dev # change this to your .env file
+
+    networks:
+      - backend-network
+
+volumes:
+  db_data:
+
+
 networks:
   interservice_network:
+    driver: bridge
+
+  backend-network:
     driver: bridge
