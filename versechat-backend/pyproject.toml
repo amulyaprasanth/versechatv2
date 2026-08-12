@@ -2,7 +2,7 @@
 name = "versechat-backend"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
+readme = "../README.md"
 authors = [
     { name = "Amulya Prasanth", email = "amulyaprasanth301@gmail.com" }
 ]
@@ -32,3 +32,8 @@ dependencies = [
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.2",
+]
