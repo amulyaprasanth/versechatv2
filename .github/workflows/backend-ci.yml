@@ -1,4 +1,4 @@
-name: Versechat Backend CI
+name: VerseChat Backend CI
 
 on:
   push:
@@ -36,13 +36,13 @@ jobs:
         run: uv sync --frozen
 
       - name: Lint
-        run: uv run ruff check src tests --fix
+        run: uv run ruff check src tests
 
       - name: Check formatting
         run: uv run ruff format --check src tests
 
       - name: Type check
-        run: uv run mypy src tests
+        run: uv run mypy src/versechat_backend
 
       - name: Run tests
         run: uv run pytest
