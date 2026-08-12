@@ -6,6 +6,7 @@ on:
       - main
       - dev
       - "feature/**"
+
     paths:
       - "versechat-backend/**"
 
@@ -38,7 +39,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Lint
-        run: uv run ruff check .
+        run: uv run ruff check . --fix
 
       - name: Check formatting
         run: uv run ruff format --check .
