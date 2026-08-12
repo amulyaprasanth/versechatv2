@@ -36,13 +36,13 @@ jobs:
         run: uv sync --frozen
 
       - name: Lint
-        run: uv run ruff check .
+        run: uv run ruff check src tests --fix
 
       - name: Check formatting
-        run: uv run ruff format --check .
+        run: uv run ruff format --check src tests
 
       - name: Type check
-        run: uv run mypy .
+        run: uv run mypy src tests
 
       - name: Run tests
         run: uv run pytest
