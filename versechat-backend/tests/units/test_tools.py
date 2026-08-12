@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 from src.versechat_backend.rag.tools import bible_search
 
 
-@patch("src.versechat_backend.agent.tools.requests.get")
+@patch("src.versechat_backend.rag.tools.requests.get")
 def test_bible_search_success(mock_get):
     mock_response = Mock()
 
@@ -34,7 +34,7 @@ def test_bible_search_success(mock_get):
     mock_get.assert_called_once()
 
 
-@patch("src.versechat_backend.agent.tools.requests.get")
+@patch("src.versechat_backend.rag.tools.requests.get")
 def test_bible_search_empty_query(mock_get):
     result = bible_search.invoke("")
 
@@ -43,7 +43,7 @@ def test_bible_search_empty_query(mock_get):
     mock_get.assert_not_called()
 
 
-@patch("src.versechat_backend.agent.tools.requests.get")
+@patch("src.versechat_backend.rag.tools.requests.get")
 def test_bible_search_unexpected_response_format(mock_get):
     mock_response = Mock()
 
@@ -58,7 +58,7 @@ def test_bible_search_unexpected_response_format(mock_get):
     assert result == [{"error": "Unexpected API response format."}]
 
 
-@patch("src.versechat_backend.agent.tools.requests.get")
+@patch("src.versechat_backend.rag.tools.requests.get")
 def test_bible_search_request_error(mock_get):
     import requests
 
@@ -69,7 +69,7 @@ def test_bible_search_request_error(mock_get):
     assert result == [{"error": "Request failed: "}]
 
 
-@patch("src.versechat_backend.agent.tools.requests.get")
+@patch("src.versechat_backend.rag.tools.requests.get")
 def test_bible_search_http_error(mock_get):
     import requests
 
