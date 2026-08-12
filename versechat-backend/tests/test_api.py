@@ -1,12 +1,12 @@
 from fastapi.testclient import TestClient
 
-from app import app
+from src.versechat_backend.app import app
 
 client = TestClient(app)
 
 
-def test_root():
-    response = client.get("/")
+def test_get_health():
+    response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"message": "Hello World"}
+    assert response.json() == {"message": "healthy"}
