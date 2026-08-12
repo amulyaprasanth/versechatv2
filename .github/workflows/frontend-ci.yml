@@ -7,6 +7,9 @@ on:
       - dev
       - "feature/**"
 
+    paths:
+      - "versechat-ui/**"
+
   pull_request:
     branches:
       - main
