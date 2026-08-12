@@ -14,9 +14,9 @@ services:
       - "3000:3000"
 
     volumes:
-      - type: bind
-        source: ./versechat-ui
-        target: /app/
+      - ./versechat-ui:/app
+      - node_env:/app/node_modules
+
     networks:
       - interservice_network
 
@@ -27,17 +27,20 @@ services:
 
     depends_on:
       - db
-      
+
     ports:
       - "8000:8000"
+
     volumes:
-      - type: bind
-        source: ./versechat-backend
-        target: /app/
+      - ./versechat-backend:/app
+      - api_venv:/app/.venv
+
     env_file:
-      - .env.dev # change this to your .env file
+      - .env.dev
+
     networks:
       - interservice_network
+      - backend_network
 
   db:
     image: postgres:18
@@ -46,12 +49,14 @@ services:
       - db_data:/var/lib/postgresql
 
     env_file:
-      - .env.dev # change this to your .env file
+      - .env.dev
 
     networks:
-      - backend-network
+      - backend_network
 
 volumes:
+  api_venv:
+  node_env:
   db_data:
 
 
@@ -59,5 +64,5 @@ networks:
   interservice_network:
     driver: bridge
 
-  backend-network:
+  backend_network:
     driver: bridge

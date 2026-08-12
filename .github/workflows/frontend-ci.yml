@@ -4,13 +4,16 @@ on:
   push:
     branches:
       - main
-      - develop
+      - dev
       - "feature/**"
+
+    paths:
+      - "versechat-ui/**"
 
   pull_request:
     branches:
       - main
-      - develop
+      - dev
 
 jobs:
   ci:
@@ -29,7 +32,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: versechat-ui/package-lock.json
 
       - name: Install dependencies
         run: npm ci
