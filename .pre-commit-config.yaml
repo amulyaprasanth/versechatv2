@@ -1,0 +1,68 @@
+repos:
+  - repo: local
+    hooks:
+
+      # ==========================================
+      # VERSECHAT BACKEND (Python / uv)
+      # ==========================================
+
+      - id: backend-ruff-check
+        name: Backend Ruff Lint
+        entry: bash -c "cd versechat-backend && uv run ruff check src tests"
+        language: system
+        files: ^versechat-backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-ruff-format
+        name: Backend Ruff Format
+        entry: bash -c "cd versechat-backend && uv run ruff format --check src tests"
+        language: system
+        files: ^versechat-backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-mypy
+        name: Backend Type Check
+        entry: bash -c "cd versechat-backend && uv run mypy src/versechat_backend"
+        language: system
+        files: ^versechat-backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-pytest
+        name: Backend Tests
+        entry: bash -c "cd versechat-backend && uv run pytest"
+        language: system
+        files: ^versechat-backend/
+        pass_filenames: false
+        stages: [pre-push]
+
+
+      # ==========================================
+      # VERSECHAT UI (Node / npm)
+      # ==========================================
+
+      - id: frontend-lint
+        name: Frontend ESLint
+        entry: bash -c "cd versechat-ui && npm run lint"
+        language: system
+        files: ^versechat-ui/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-typecheck
+        name: Frontend Type Check
+        entry: bash -c "cd versechat-ui && npm run typecheck"
+        language: system
+        files: ^versechat-ui/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-build
+        name: Frontend Build
+        entry: bash -c "cd versechat-ui && npm run build"
+        language: system
+        files: ^versechat-ui/
+        pass_filenames: false
+        stages: [pre-push]
