@@ -18,7 +18,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: frontend
+        working-directory: versechat-ui
 
     steps:
       - name: Checkout
