@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, PropertyMock, patch
 import wikipediaapi
 
 from versechat_backend.rag.tools import wikipedia_search
@@ -6,15 +6,22 @@ from versechat_backend.rag.tools import wikipedia_search
 @patch("versechat_backend.rag.tools.wiki.page")
 def test_wiki_tool_success(mock_page):
     mock_response = Mock()
-    
+
     mock_response.exists.return_value = True
-    mock_response.text = "Python is an interpreted programming language"
-    
+
+    text_property = PropertyMock(
+        return_value="Python is an interpreted programming language"
+    )
+    type(mock_response).text = text_property
+
     mock_page.return_value = mock_response
 
-    result = wikipedia_search.invoke('Python')
-    
+    result = wikipedia_search.invoke("Python")
+
     mock_page.assert_called_once_with("Python")
+    mock_response.exists.assert_called_once_with()
+    text_property.assert_called_once_with()
+
     assert result == "Python is an interpreted programming language"
     
 @patch("versechat_backend.rag.tools.wiki.page")
@@ -28,12 +35,21 @@ def test_wki_tool_empty_query(mock_page):
 @patch("versechat_backend.rag.tools.wiki.page")
 def test_wiki_tool_page_not_exist(mock_page):
     mock_response = Mock()
+
     mock_response.exists.return_value = False
+
+    text_property = PropertyMock()
+    type(mock_response).text = text_property
+
     mock_page.return_value = mock_response
+
     result = wikipedia_search.invoke("$%#")
-    
+
     mock_page.assert_called_once_with("$%#")
-    assert result == f"No Wikipedia page was found for '$%#'."
+    mock_response.exists.assert_called_once_with()
+    text_property.assert_not_called()
+
+    assert result == "No Wikipedia page was found for '$%#'."
     
 @patch("versechat_backend.rag.tools.wiki.page")
 def test_wiki_tool_connection_error(mock_page):
@@ -97,3 +113,18 @@ def test_wiki_tool_http_error(mock_page):
         "Wikipedia HTTP error: "
         "(500, 'https://wiki.org/machine-learning')"
     )
+    
+@patch("versechat_backend.rag.tools.wiki.page")
+def test_wiki_tool_empty_query(mock_page):
+    result = wikipedia_search.invoke("")
+
+    mock_page.assert_not_called()
+    assert result == "Invalid query"
+
+
+@patch("versechat_backend.rag.tools.wiki.page")
+def test_wiki_tool_whitespace_query(mock_page):
+    result = wikipedia_search.invoke("   ")
+
+    mock_page.assert_not_called()
+    assert result == "Invalid query"
