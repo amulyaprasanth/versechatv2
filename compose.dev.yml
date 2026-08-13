@@ -14,7 +14,7 @@ services:
       - "3000:3000"
 
     volumes:
-      - ./versechat-ui:/app
+      - ./versechat-ui:/app:z
       - node_env:/app/node_modules
 
     networks:
@@ -32,7 +32,7 @@ services:
       - "8000:8000"
 
     volumes:
-      - ./versechat-backend:/app
+      - ./versechat-backend:/app:z
       - api_venv:/app/.venv
 
     env_file:
