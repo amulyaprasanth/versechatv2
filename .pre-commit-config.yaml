@@ -1,5 +1,4 @@
 repos:
-
   - repo: local
     hooks:
 
@@ -9,7 +8,7 @@ repos:
 
       - id: backend-ruff-check
         name: Backend Ruff Lint
-        entry: bash -c "cd versechat-backend && uv run ruff check src tests --fix"
+        entry: bash -c "cd versechat-backend && uv run ruff check src tests"
         language: system
         files: ^versechat-backend/
         pass_filenames: false
@@ -54,7 +53,7 @@ repos:
 
       - id: frontend-typecheck
         name: Frontend Type Check
-        entry: bash -c "cd versechat-ui && npx tsc --noEmit"
+        entry: bash -c "cd versechat-ui && npm run typecheck"
         language: system
         files: ^versechat-ui/
         pass_filenames: false
