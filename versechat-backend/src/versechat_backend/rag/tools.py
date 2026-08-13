@@ -1,7 +1,6 @@
 import requests
-from langchain.tools import tool
 import wikipediaapi
-
+from langchain.tools import tool
 
 wiki = wikipediaapi.Wikipedia(
     user_agent="Versechat/1.0 (amulyaprasanth301@gmail.com)", language="en"
@@ -34,9 +33,10 @@ def bible_search(query: str) -> list[dict]:
     except RuntimeError as e:
         return [{"error": f"Unexpected error: {e}"}]
 
+
 @tool(
     "wikipedia_tool",
-    description="Search Wikipedia for historical and archaeological information."
+    description="Search Wikipedia for historical and archaeological information.",
 )
 def wikipedia_search(query: str) -> str:
     """Search Wikipedia and return the article content."""
@@ -66,6 +66,8 @@ def wikipedia_search(query: str) -> str:
 
     except wikipediaapi.exceptions.WikiHttpError as e:
         return f"Wikipedia HTTP error: {e}"
+
+
 if __name__ == "__main__":
     result = bible_search.invoke(input="god is love")
     print(result)
