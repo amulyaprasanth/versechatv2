@@ -1,12 +1,13 @@
 import os
 
 from langchain.agents import create_agent
+from langchain.messages import ToolMessage
 from langchain.tools import BaseTool
 from langchain_groq import ChatGroq
 from pydantic import SecretStr
 
 from versechat_backend.core.logger import get_logger
-from versechat_backend.rag.tools import bible_search
+from versechat_backend.rag.tools import bible_search, wikipedia_search
 
 logger = get_logger()
 
@@ -46,6 +47,7 @@ class BibleAgent:
         -----------
         1. Use bible_search first whenever the question relates to Scripture, Christian teachings, Biblical characters, theology, or spiritual topics.
         2. Do not rely on external sources when Scripture alone sufficiently answers the question.
+        3. If you want to use wikipedia tool, craft a page title and then search using that title
         
         VERSE FORMAT:
         -------------
@@ -74,7 +76,9 @@ class BibleAgent:
 
         try:
             self.model = ChatGroq(
-                model=self.model_name, api_key=SecretStr(self.groq_api_key)
+                model=self.model_name,
+                api_key=SecretStr(self.groq_api_key),
+                temperature=0.3,
             )
 
         except ValueError:
@@ -100,15 +104,31 @@ class BibleAgent:
             response = await self.agent.ainvoke({"messages": [input_message]})
             answer = response["messages"][-1].content
 
+            tool_messages = [
+                msg for msg in response["messages"] if isinstance(msg, ToolMessage)
+            ]
+
+            for msg in tool_messages:
+                print("*" * 36)
+                print(f"Tool Name: {msg.name}")
+                print(f"Tool Output: {msg.content}")
+
+            print("*" * 36)
+
             return answer
+
         except RuntimeError as e:
             logger.error(f"Agent invocation failed: {e!s}")
             return "Sorry, something went wrong while processing your request."
 
 
 if __name__ == "__main__":  # pragma: no cover
-    assistant = BibleAgent(model_name="llama-3.3-70b-versatile", tools=[bible_search])
-    query = "who is jesus christ?"
+    import asyncio
+
+    assistant = BibleAgent(
+        model_name="llama-3.3-70b-versatile", tools=[bible_search, wikipedia_search]
+    )
+    query = "historical significance of jerusalem"
     print("User:", query)
-    result = assistant.ask(query)
+    result = asyncio.run(assistant.ask(query))
     print(result)
