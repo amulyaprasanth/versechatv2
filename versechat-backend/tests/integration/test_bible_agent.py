@@ -11,7 +11,9 @@ async def test_bible_agent():
         tools=[bible_search],
     )
 
-    response = await agent.ask("Who is Jesus?")
+    response, sources = await agent.ask("Who is Jesus?")
 
     assert isinstance(response, str)
     assert response.strip()
+    assert isinstance(sources, list)
+    assert len(sources) != 0

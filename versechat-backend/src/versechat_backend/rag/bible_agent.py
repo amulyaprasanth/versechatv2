@@ -1,5 +1,6 @@
 import os
 
+from groq import RateLimitError
 from langchain.agents import create_agent
 from langchain.messages import ToolMessage
 from langchain.tools import BaseTool
@@ -7,7 +8,6 @@ from langchain_groq import ChatGroq
 from pydantic import SecretStr
 
 from versechat_backend.core.logger import get_logger
-from versechat_backend.rag.tools import bible_search
 
 logger = get_logger()
 
@@ -33,7 +33,7 @@ class BibleAgent:
         self.prompt_template = """
         You are a helpful Bible assistant that answers questions about the Bible and related topics.
 
-        Your primary purpose is to help users understand Scripture in a clear, accurate, and accessible way.
+        Your primary purpose is to help users understand Scripture in a clear, accurate, and accessible way. DO NOT ANSWER IF THE QUESTION IS NOT RELATED TO BIBLE AND CHRISTIANITY
         
         GUIDING PRINCIPLES:
         -------------------
@@ -93,7 +93,7 @@ class BibleAgent:
             system_prompt=self.prompt_template,
         )
 
-    async def ask(self, query: str) -> str:
+    async def ask(self, query: str) -> tuple[str, list[dict]]:
         """Ask the assistant a question with optional prior messages (memory) and get the response."""
 
         if not isinstance(query, str) or not query.strip():
@@ -108,25 +108,30 @@ class BibleAgent:
                 msg for msg in response["messages"] if isinstance(msg, ToolMessage)
             ]
 
+            sources = []
+
             for msg in tool_messages:
-                print("*" * 36)
-                print(f"Tool Name: {msg.name}")
-                print(f"Tool Output: {msg.content}")
+                source = {"tool_name": msg.name, "tool_output": msg.content}
+                sources.append(source)
 
-            print("*" * 36)
-
-            return answer
+            return answer, sources
+        except RateLimitError:
+            return "Rate limit reached! Please try after some time", []
 
         except RuntimeError as e:
             logger.error(f"Agent invocation failed: {e!s}")
-            return "Sorry, something went wrong while processing your request."
+            return "Sorry, something went wrong while processing your request.", []
 
 
 if __name__ == "__main__":  # pragma: no cover
     import asyncio
 
-    assistant = BibleAgent(model_name="llama-3.3-70b-versatile", tools=[bible_search])
-    query = "historical significance of jerusalem"
+    from versechat_backend.rag.tools import bible_search, wiki_tool
+
+    assistant = BibleAgent(
+        model_name="llama-3.3-70b-versatile", tools=[bible_search, wiki_tool]
+    )
+    query = "history of israel"
     print("User:", query)
     result = asyncio.run(assistant.ask(query))
     print(result)

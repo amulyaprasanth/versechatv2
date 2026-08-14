@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from langchain.messages import ToolMessage
 
 from versechat_backend.rag.bible_agent import BibleAgent
 from versechat_backend.rag.tools import bible_search
@@ -100,26 +101,39 @@ def test_bible_agent_missing_groq_api_key():
 
 
 @pytest.mark.anyio
+@patch.dict("os.environ", {"GROQ_API_KEY": "test-api-key"})
 async def test_bible_agent_ask_success():
-    mock_agent = Mock()
-    mock_agent.ainvoke = AsyncMock(
-        return_value={"messages": [Mock(content="Jesus is the Son of God.")]}
+    tool_msg = ToolMessage(
+        content="John 3:16 details",
+        tool_call_id="call_123",
+        name="bible_search",
     )
+    ai_msg = Mock(content="Jesus is the Son of God.")
+
+    mock_agent = Mock()
+    mock_agent.ainvoke = AsyncMock(return_value={"messages": [tool_msg, ai_msg]})
     agent = BibleAgent(
         model_name="llama-3.3-70b-versatile",
         tools=[bible_search],
     )
     agent.agent = mock_agent
 
-    response = await agent.ask("Who is Jesus")
+    answer, sources = await agent.ask("Who is Jesus")
 
     mock_agent.ainvoke.assert_awaited_once_with(
         {"messages": [{"role": "user", "content": "Who is Jesus"}]}
     )
-    assert response == "Jesus is the Son of God."
+    assert answer == "Jesus is the Son of God."
+    assert sources == [
+        {
+            "tool_name": "bible_search",
+            "tool_output": "John 3:16 details",
+        }
+    ]
 
 
 @pytest.mark.anyio
+@patch.dict("os.environ", {"GROQ_API_KEY": "test-api-key"})
 async def test_bible_agent_ask_query_empty():
     mock_agent = Mock()
     mock_agent.ainvoke = AsyncMock()
@@ -137,6 +151,7 @@ async def test_bible_agent_ask_query_empty():
 
 
 @pytest.mark.anyio
+@patch.dict("os.environ", {"GROQ_API_KEY": "test-api-key"})
 async def test_bible_agent_ask_runtime_error():
     mock_agent = Mock()
     mock_agent.ainvoke = AsyncMock(side_effect=RuntimeError("Agent invocation failed"))
@@ -147,9 +162,10 @@ async def test_bible_agent_ask_runtime_error():
     )
     agent.agent = mock_agent
 
-    result = await agent.ask("Who is Jesus?")
+    answer, sources = await agent.ask("Who is Jesus?")
 
-    assert result == "Sorry, something went wrong while processing your request."
+    assert answer == "Sorry, something went wrong while processing your request."
+    assert sources == []
 
     mock_agent.ainvoke.assert_awaited_once_with(
         {"messages": [{"role": "user", "content": "Who is Jesus?"}]}
