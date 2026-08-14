@@ -1,7 +1,9 @@
 import os
 
 from langchain.agents import create_agent
+from langchain.tools import BaseTool
 from langchain_groq import ChatGroq
+from pydantic import SecretStr
 
 from versechat_backend.core.logger import get_logger
 from versechat_backend.rag.tools import bible_search
@@ -9,11 +11,22 @@ from versechat_backend.rag.tools import bible_search
 logger = get_logger()
 
 
-class BibleAssistant:
+class BibleAgent:
     """An intelligent assistant for answering Bible-related and factual questions."""
 
-    def __init__(self):
-        self.groq_api_key = os.getenv("GROQ_API_KEY")
+    def __init__(self, model_name: str, tools: list[BaseTool]):
+        self.groq_api_key = os.getenv("GROQ_API_KEY", "")
+        self.model_name = model_name
+        self.tools = tools
+
+        if not isinstance(model_name, str) or not model_name.strip():
+            raise ValueError("model_name is empty")
+
+        if len(tools) == 0:
+            raise ValueError("No tools to bind the model. Tools list is empty")
+
+        if not self.groq_api_key.strip():
+            raise ValueError("Error: GROQ_API_KEY is missing")
 
         # Define system prompt
         self.prompt_template = """
@@ -58,8 +71,16 @@ class BibleAssistant:
 """
 
         # Initialize model
-        self.model = ChatGroq(model="llama-3.1-8b-instant")
-        self.tools = [bible_search]
+
+        try:
+            self.model = ChatGroq(
+                model=self.model_name, api_key=SecretStr(self.groq_api_key)
+            )
+
+        except ValueError:
+            raise ValueError(
+                "Invalid model name. Please check [https://console.groq.com/docs/models](https://console.groq.com/docs/models) for a list of supported models."
+            )
 
         # Create agent
         self.agent = create_agent(
@@ -68,13 +89,15 @@ class BibleAssistant:
             system_prompt=self.prompt_template,
         )
 
-    async def ask(self, query: str, messages: list | None = None) -> str:
+    async def ask(self, query: str) -> str:
         """Ask the assistant a question with optional prior messages (memory) and get the response."""
+
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query should not be empty")
+
         try:
-            if messages is None:
-                messages = []
-            input_messages = messages + [{"role": "user", "content": query}]
-            response = await self.agent.ainvoke({"messages": input_messages})
+            input_message = {"role": "user", "content": query}
+            response = await self.agent.ainvoke({"messages": [input_message]})
             answer = response["messages"][-1].content
 
             return answer
@@ -83,8 +106,8 @@ class BibleAssistant:
             return "Sorry, something went wrong while processing your request."
 
 
-if __name__ == "__main__":
-    assistant = BibleAssistant()
+if __name__ == "__main__":  # pragma: no cover
+    assistant = BibleAgent(model_name="llama-3.3-70b-versatile", tools=[bible_search])
     query = "who is jesus christ?"
     print("User:", query)
     result = assistant.ask(query)
