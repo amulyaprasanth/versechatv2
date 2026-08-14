@@ -7,7 +7,7 @@ from langchain_groq import ChatGroq
 from pydantic import SecretStr
 
 from versechat_backend.core.logger import get_logger
-from versechat_backend.rag.tools import bible_search, wikipedia_search
+from versechat_backend.rag.tools import bible_search
 
 logger = get_logger()
 
@@ -125,9 +125,7 @@ class BibleAgent:
 if __name__ == "__main__":  # pragma: no cover
     import asyncio
 
-    assistant = BibleAgent(
-        model_name="llama-3.3-70b-versatile", tools=[bible_search, wikipedia_search]
-    )
+    assistant = BibleAgent(model_name="llama-3.3-70b-versatile", tools=[bible_search])
     query = "historical significance of jerusalem"
     print("User:", query)
     result = asyncio.run(assistant.ask(query))

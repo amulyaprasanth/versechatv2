@@ -7,7 +7,7 @@ from versechat_backend.rag.retriever import InMemoryRetriever
 
 
 class MockEmbeddings(Embeddings):
-    """Mock embeddings for fast, deterministic unit testing."""
+    """Mock embeddings for fast, deterministic unit testing (sync and async)."""
 
     def __init__(self, mapping: dict[str, list[float]]):
         self.mapping = mapping
@@ -17,6 +17,12 @@ class MockEmbeddings(Embeddings):
 
     def embed_query(self, text: str) -> list[float]:
         return self.mapping.get(text, [0.0, 0.0])
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return self.embed_query(text)
 
 
 @pytest.fixture
@@ -35,7 +41,7 @@ def mock_embeddings() -> MockEmbeddings:
 
     - Fruit terms align with vector [1.0, 0.0]
     - Vehicle terms align with vector [0.0, 1.0]
-    - Mixed terms align with vector [0.7, 0.7]
+    - Mixed terms align with vector [0.8, 0.2]
     """
     mapping = {
         "apples and oranges": [1.0, 0.0],
@@ -45,6 +51,11 @@ def mock_embeddings() -> MockEmbeddings:
         "vehicle query": [0.0, 1.0],
     }
     return MockEmbeddings(mapping=mapping)
+
+
+# ==============================================================================
+# Synchronous Tests
+# ==============================================================================
 
 
 def test_model_post_init_creates_vectors(
@@ -69,9 +80,6 @@ def test_retrieval_ranking_order(
 
     results = retriever.invoke("fruit query")
 
-    # [1.0, 0.0] @ [1.0, 0.0] = 1.0  -> "apples and oranges" (index 0)
-    # [0.8, 0.2] @ [1.0, 0.0] = 0.8  -> "bananas and apples" (index 2)
-    # [0.0, 1.0] @ [1.0, 0.0] = 0.0  -> "cars and trucks"    (index 1)
     assert len(results) == 3
     assert results[0].page_content == "apples and oranges"
     assert results[1].page_content == "bananas and apples"
@@ -112,4 +120,56 @@ def test_empty_document_list(mock_embeddings: MockEmbeddings):
     results = retriever.invoke("any query")
 
     assert results == []
-    assert retriever._vectors.shape == (0,)
+    assert retriever._vectors.size == 0
+
+
+# ==============================================================================
+# Asynchronous Tests
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_async_retrieval_ranking_order(
+    sample_documents: list[Document], mock_embeddings: MockEmbeddings
+):
+    """Test asynchronous retrieval via ainvoke."""
+    retriever = InMemoryRetriever(
+        docs=sample_documents, embeddings=mock_embeddings, k=3
+    )
+
+    results = await retriever.ainvoke("fruit query")
+
+    assert len(results) == 3
+    assert results[0].page_content == "apples and oranges"
+    assert results[1].page_content == "bananas and apples"
+    assert results[2].page_content == "cars and trucks"
+
+
+@pytest.mark.asyncio
+async def test_async_empty_document_list(mock_embeddings: MockEmbeddings):
+    """Test asynchronous retrieval when initialized with an empty document list."""
+    retriever = InMemoryRetriever(docs=[], embeddings=mock_embeddings, k=5)
+
+    results = await retriever.ainvoke("any query")
+
+    assert results == []
+    assert retriever._vectors.size == 0
+
+
+@pytest.mark.asyncio
+async def test_afrom_documents_factory(
+    sample_documents: list[Document], mock_embeddings: MockEmbeddings
+):
+    """Test async factory constructor initialization and retrieval."""
+    retriever = await InMemoryRetriever.afrom_documents(
+        docs=sample_documents,
+        embeddings=mock_embeddings,
+        k=2,
+    )
+
+    assert retriever._vectors.shape == (3, 2)
+
+    results = await retriever.ainvoke("vehicle query")
+
+    assert len(results) == 2
+    assert results[0].page_content == "cars and trucks"

@@ -1,9 +1,13 @@
+from typing import Self
+
 import numpy as np
 from langchain.embeddings import Embeddings
-from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import PrivateAttr
 
 
@@ -15,57 +19,67 @@ class InMemoryRetriever(BaseRetriever):
     _vectors: np.ndarray = PrivateAttr()
 
     def model_post_init(self, __context, /) -> None:
-        self._vectors = np.array(
-            self.embeddings.embed_documents([doc.page_content for doc in self.docs])
-        )
+        if self.docs:
+            self._vectors = np.array(
+                self.embeddings.embed_documents([doc.page_content for doc in self.docs])
+            )
+        else:
+            self._vectors = np.empty((0, 0))
 
+    # --- Synchronous Retrieval ---
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-
         if not self.docs or self._vectors.size == 0:
             return []
 
         query_vector = np.array(self.embeddings.embed_query(query))
-
         scores = self._vectors @ query_vector
-
         top_indices = np.argsort(scores)[::-1][: self.k]
 
         return [self.docs[i] for i in top_indices]
 
+    # --- Asynchronous Retrieval ---
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+    ) -> list[Document]:
+        if not self.docs or self._vectors.size == 0:
+            return []
 
-if __name__ == "__main__":
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+        # Await async query embedding
+        query_vector = np.array(await self.embeddings.aembed_query(query))
 
-    from versechat_backend.rag.tools import wikipedia_search
+        scores = self._vectors @ query_vector
+        top_indices = np.argsort(scores)[::-1][: self.k]
 
-    result = Document(page_content=wikipedia_search.invoke("jerusalem"))
+        return [self.docs[i] for i in top_indices]
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100,
-    )
+    # --- Async Factory Constructor (Optional) ---
+    @classmethod
+    async def afrom_documents(
+        cls,
+        docs: list[Document],
+        embeddings: Embeddings,
+        k: int = 5,
+    ) -> Self:
+        """Constructs retriever asynchronously without blocking during document embedding."""
+        retriever = cls.model_construct(
+            docs=docs,
+            embeddings=embeddings,
+            k=k,
+        )
+        if docs:
+            vectors = await embeddings.aembed_documents(
+                [doc.page_content for doc in docs]
+            )
+            retriever._vectors = np.array(vectors)
+        else:
+            retriever._vectors = np.empty((0, 0))
 
-    split_results = splitter.split_documents([result])
-
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
-
-    retriever = InMemoryRetriever(
-        docs=split_results,
-        embeddings=embeddings,
-        k=5,
-    )
-
-    results = retriever.invoke("historical significance of Jerusalem")
-
-    for result in results:
-        print(result.page_content)
-        print("-" * 80)
+        return retriever

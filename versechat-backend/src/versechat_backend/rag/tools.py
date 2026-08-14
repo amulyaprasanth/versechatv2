@@ -1,10 +1,20 @@
 import requests
-import wikipediaapi
 from langchain.tools import tool
+from pydantic import BaseModel, Field
 
-wiki = wikipediaapi.Wikipedia(
-    user_agent="Versechat/1.0 (amulyaprasanth301@gmail.com)", language="en"
-)
+from versechat_backend.rag.wiki_retriever import WikiRetriever
+
+
+class WikiSearchInput(BaseModel):
+    topic: str = Field(
+        description="The Wikipedia article topic/title to search (e.g., 'Jerusalem', 'Quantum computing')"
+    )
+    query: str = Field(
+        description="The specific search question or query to answer using the Wikipedia article content."
+    )
+
+
+retriever = WikiRetriever()
 
 
 @tool(
@@ -35,39 +45,22 @@ def bible_search(query: str) -> list[dict]:
 
 
 @tool(
-    "wikipedia_tool",
-    description="Search Wikipedia for historical and archaeological information.",
+    "wiki_retriever",
+    description="Search wikipedia for historical and archaeological information",
 )
-def wikipedia_search(query: str) -> str:
-    """Search Wikipedia and return the article content."""
+async def wiki_tool(topic: str, query: str) -> str:
+    """Userful for retrieving factual context from Wikipedia for a specific topic"""
 
-    if not query or not query.strip():
-        return "Invalid query"
+    docs = retriever.invoke(query=query, topic=topic)
 
-    try:
-        page = wiki.page(query)
+    if not docs:
+        return "No relavant information found on Wikipedia for this topic."
 
-        if not page.exists():
-            return f"No Wikipedia page was found for '{query}'."
-
-        return page.text
-
-    except wikipediaapi.exceptions.WikiConnectionError:
-        return "Could not connect to Wikipedia"
-
-    except wikipediaapi.exceptions.WikiHttpTimeoutError:
-        return "The request to Wikipedia timed out"
-
-    except wikipediaapi.exceptions.WikiRateLimitError:
-        return "Wikipedia rate limit was exceeded"
-
-    except wikipediaapi.exceptions.WikiInvalidJsonError:
-        return "Wikipedia returned an invalid JSON response"
-
-    except wikipediaapi.exceptions.WikiHttpError as e:
-        return f"Wikipedia HTTP error: {e}"
+    return "\n\n".join([doc.page_content for doc in docs])
 
 
 if __name__ == "__main__":
-    result = bible_search.invoke(input="god is love")
+    result = wiki_tool.invoke(
+        input="What is the historical significance of Jerusalem in ancient times?"
+    )
     print(result)
