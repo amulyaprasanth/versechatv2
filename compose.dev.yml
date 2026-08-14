@@ -1,4 +1,4 @@
-name: "VerseChat-dev"
+name: "verseChat-dev"
 
 services:
 
@@ -36,7 +36,7 @@ services:
       - api_venv:/app/.venv
 
     env_file:
-      - .env.dev
+      - versechat-backend/.env.dev
 
     networks:
       - interservice_network

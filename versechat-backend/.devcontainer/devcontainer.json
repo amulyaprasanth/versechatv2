@@ -16,5 +16,10 @@
     }
   },
 
-  "mounts": ["source=${localWorkspaceFolder},target=/app/,type=bind"]
+  "mounts": ["source=${localWorkspaceFolder},target=/app/,type=bind"],
+
+  "runArgs": [
+    "--env-file", 
+    ".env.dev"
+  ]
 }
