@@ -133,5 +133,5 @@ if __name__ == "__main__":  # pragma: no cover
     )
     query = "history of israel"
     print("User:", query)
-    result = asyncio.run(assistant.ask(query))
-    print(result)
+    answer, sources = asyncio.run(assistant.ask(query))
+    print(answer, sources)
