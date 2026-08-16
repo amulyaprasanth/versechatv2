@@ -9,8 +9,9 @@ def test_ask_success(client):
 
     assert response.status_code == 200
     body = ChatResponse.model_validate(response.json())
-    assert body.answer
-    assert isinstance(body.answer, str)
+    assert body.role == "assistant"
+    assert body.content
+    assert isinstance(body.content, str)
     assert isinstance(body.sources, list)
 
 

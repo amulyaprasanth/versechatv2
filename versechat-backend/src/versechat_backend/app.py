@@ -47,4 +47,4 @@ async def ask_agent(request: ChatRequest):
             detail="internal error occured",
         )
 
-    return ChatResponse(answer=answer, sources=sources)
+    return ChatResponse(role="assistant", content=answer, sources=sources)

@@ -11,5 +11,6 @@ class Source(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: str
+    role: str
+    content: str
     sources: list[Source]

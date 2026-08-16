@@ -25,7 +25,6 @@
     "source=${localWorkspaceFolderBasename}-venv,target=/app/.venv,type=volume"
   ],
 
-  // Automatically runs uv sync when the container is built/created
   "postCreateCommand": "uv sync",
 
   "runArgs": ["--env-file", ".env.dev"]
