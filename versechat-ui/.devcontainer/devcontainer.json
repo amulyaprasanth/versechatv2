@@ -1,0 +1,33 @@
+{
+  "name": "Next.js Development",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+
+  "mounts": [
+    "source=nextjs_node_modules,target=/workspace/node_modules,type=volume"
+  ],
+
+  "forwardPorts": [3000],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "usernamehw.errorlens",
+        "WallabyJs.console-ninja",
+        "bradlc.vscode-tailwindcss"
+
+      ]
+    }
+  },
+
+
+  "containerUser": "node",
+  "remoteUser": "node"
+}
