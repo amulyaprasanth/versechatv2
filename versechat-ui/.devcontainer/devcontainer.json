@@ -6,11 +6,11 @@
     "context": ".."
   },
 
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace:Z,type=bind",
   "workspaceFolder": "/workspace",
 
   "mounts": [
-    "source=nextjs_node_modules,target=/workspace/node_modules,type=volume"
+    "source=nextjs_node_modules,target=/workspace/node_modules:Z,type=volume"
   ],
 
   "forwardPorts": [3000],
@@ -30,4 +30,4 @@
 
   "containerUser": "node",
   "remoteUser": "node"
-}
+

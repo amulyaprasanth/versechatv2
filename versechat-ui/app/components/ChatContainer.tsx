@@ -1,13 +1,56 @@
-import { Open_Sans } from "next/font/google";
+"use client";
 
+import { Open_Sans } from "next/font/google";
+import { useState } from "react";
 import ChatInput from "../cards/ChatInput";
+import { Message } from "../types/chat";
+import MessageCard from "../cards/MessageCard";
+import { sendMessage } from "../api/chat";
+
 const opensans = Open_Sans({
   subsets: ["latin"],
 });
+
 const ChatContainer = () => {
-  const messages: Message[] = [];
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>("");
 
   const isEmpty = messages.length === 0;
+
+  const onMessage = (message: string) => {
+    setInputMessage(message);
+  };
+
+  const handleSend = async () => {
+    if (!inputMessage.trim()) return;
+
+    const query = inputMessage;
+
+    const userMessage: Message = {
+      role: "user",
+      content: query,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
+
+    try {
+      const response = await sendMessage(query);
+
+      setMessages((prev) => [...prev, response]);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Something went wrong. Please try again.",
+          error: true,
+        },
+      ]);
+    }
+  };
 
   return (
     <section id="chat-container" className="h-full">
@@ -19,24 +62,26 @@ const ChatContainer = () => {
               <h1 className={` ${opensans.className} text-center text-3xl`}>
                 Hi, Welcome to Versechat!
               </h1>
-              <ChatInput />
+              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </div>
         ) : (
           /* Chat state */
           <>
             <div className="flex-1 min-h-0 overflow-y-auto">
-              {messages.map((message, index) => (
-                <div key={index}>{message.content}</div>
-              ))}
+              <div className="mx-auto flex max-w-3xl flex-col gap-4">
+                {messages.map((message, index) => (
+                  <MessageCard key={index} {...message} />
+                ))}
+              </div>
             </div>
-
             <div className="shrink-0 flex justify-center">
-              <ChatInput />
+              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </>
         )}
       </div>
+      <>{console.log(inputMessage)}</>
     </section>
   );
 };

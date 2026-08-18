@@ -1,15 +1,16 @@
-type Source = {
+export type Source = {
   tool_name: string;
   tool_output: string;
 };
 
-type Message = {
+export type Message = {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  error?: boolean;
 };
 
-type ChatResponse = {
+export type ChatResponse = {
   role: "assistant"
   content: string;
   sources: Source[];
