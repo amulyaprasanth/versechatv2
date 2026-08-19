@@ -6,6 +6,7 @@ import ChatInput from "../cards/ChatInput";
 import { Message } from "../types/chat";
 import MessageCard from "../cards/MessageCard";
 import { sendMessage } from "../api/chat";
+import MessageLoader from "../cards/MessageLoading";
 
 const opensans = Open_Sans({
   subsets: ["latin"],
@@ -14,7 +15,7 @@ const opensans = Open_Sans({
 const ChatContainer = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>("");
-
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const isEmpty = messages.length === 0;
 
   const onMessage = (message: string) => {
@@ -22,6 +23,7 @@ const ChatContainer = () => {
   };
 
   const handleSend = async () => {
+
     if (!inputMessage.trim()) return;
 
     const query = inputMessage;
@@ -33,11 +35,13 @@ const ChatContainer = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
-
+    setIsLoading(true);
     try {
       const response = await sendMessage(query);
 
+
       setMessages((prev) => [...prev, response]);
+      setIsLoading(false);
     } catch (error) {
       console.error("Failed to send message:", error);
 
@@ -73,7 +77,11 @@ const ChatContainer = () => {
                 {messages.map((message, index) => (
                   <MessageCard key={index} {...message} />
                 ))}
+                {
+                  isLoading && (<div className="w-4 h-4 self-start"> <MessageLoader /></div>)
+                }
               </div>
+
             </div>
             <div className="shrink-0 flex justify-center">
               <ChatInput handleMessage={onMessage} handleSend={handleSend} />
@@ -81,7 +89,6 @@ const ChatContainer = () => {
           </>
         )}
       </div>
-      <>{console.log(inputMessage)}</>
     </section>
   );
 };
