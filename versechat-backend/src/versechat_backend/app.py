@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from versechat_backend.core.logger import get_logger
 from versechat_backend.models.chat import ChatRequest, ChatResponse
+
 logger = get_logger()
 
 
@@ -15,11 +16,7 @@ async def lifespan(app: FastAPI):
         from versechat_backend.rag.tools import bible_search, wiki_tool
 
         app.state.agent = BibleAgent(
-<<<<<<< HEAD
             model_name="qwen/qwen3.6-27b", tools=[bible_search, wiki_tool]
-=======
-            model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
->>>>>>> feature/ui
         )
     except Exception:
         logger.exception("Bible agent failed to initialize")

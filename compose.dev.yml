@@ -37,18 +37,13 @@ services:
 
     networks:
       - interservice_network
-      - backend_network
-
 
 volumes:
   api_venv:
   node_env:
-  
+
 
 
 networks:
   interservice_network:
-    driver: bridge
-
-  backend_network:
     driver: bridge
