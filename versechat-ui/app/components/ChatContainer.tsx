@@ -6,7 +6,7 @@ import ChatInput from "../cards/ChatInput";
 import { Message } from "../types/chat";
 import MessageCard from "../cards/MessageCard";
 import { sendMessage } from "../api/chat";
-import MessageLoader from "../cards/MessageLoading";
+
 
 const opensans = Open_Sans({
   subsets: ["latin"],
@@ -42,8 +42,8 @@ const ChatContainer = () => {
 
       setMessages((prev) => [...prev, response]);
       setIsLoading(false);
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } catch {
+
 
       setMessages((prev) => [
         ...prev,
@@ -75,11 +75,9 @@ const ChatContainer = () => {
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="mx-auto flex max-w-3xl flex-col gap-4">
                 {messages.map((message, index) => (
-                  <MessageCard key={index} {...message} />
+                  <MessageCard key={index} message={message} isLoading={isLoading} />
                 ))}
-                {
-                  isLoading && (<div className="w-4 h-4 self-start"> <MessageLoader /></div>)
-                }
+
               </div>
 
             </div>
