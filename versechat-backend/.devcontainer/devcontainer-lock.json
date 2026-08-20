@@ -1,0 +1,19 @@
+{
+  "features": {
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/jsburckhardt/devcontainer-features/uv@sha256:542a0bc2203205b3c696de650ba862f280b20af3543493cc232edd9ac35791f7",
+      "integrity": "sha256:542a0bc2203205b3c696de650ba862f280b20af3543493cc232edd9ac35791f7"
+    },
+    "ghcr.io/stu-bell/devcontainer-features/neovim:0": {
+      "version": "0.1.2",
+      "resolved": "ghcr.io/stu-bell/devcontainer-features/neovim@sha256:ffa7418bbdc3ab444d894f018cb9fcc87576837ade7c8d99574a9b44655194d0",
+      "integrity": "sha256:ffa7418bbdc3ab444d894f018cb9fcc87576837ade7c8d99574a9b44655194d0"
+    },
+    "ghcr.io/xavierbeheydt/devcontainer-extras/lazyvim:0": {
+      "version": "0.1.0",
+      "resolved": "ghcr.io/xavierbeheydt/devcontainer-extras/lazyvim@sha256:3bc0fe8d13e61946b58f34fc35500b4990f8ed103ed163881c58599d9e8d2438",
+      "integrity": "sha256:3bc0fe8d13e61946b58f34fc35500b4990f8ed103ed163881c58599d9e8d2438"
+    }
+  }
+}
