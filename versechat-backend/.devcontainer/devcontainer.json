@@ -1,13 +1,18 @@
 {
-  "name": "Python container",
-  "image": "ubuntu",
-  "features": {
-    "ghcr.io/stu-bell/devcontainer-features/neovim:0" : {},
-    "ghcr.io/jsburckhardt/devcontainer-features/uv:1" : {},
-    "ghcr.io/xavierbeheydt/devcontainer-extras/lazyvim:0": {}
+  "name": "Python Dev container",
+  "build": {
+    "dockerfile": "Dockerfile.dev",
+    "context": ".."
   },
-  "containerEnv": {
-    "UV_PYTHON": "3.14"
-  },
-  "postCreateCommand": "uv sync -q"
+
+  "runArgs": [
+    "--env-file",
+    "${localWorkspaceFolder}/.env.dev"
+  ],
+  "mounts": [
+    "source=${localEnv:HOME}/.config/nvim,target=/home/vscode/.config/nvim,type=bind"
+  ],
+  "forwardPorts": [8000],
+  "remoteUser": "vscode",
+  "postCreateCommand": "[ ! -d ~/.config/nvim ] && git clone https://github.com/LazyVim/starter ~/.config/nvim || true; uv sync -q"
 }
