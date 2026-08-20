@@ -38,4 +38,8 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+.idea/
+.code/
+.env.dev
+
 next-env.d.ts

@@ -25,9 +25,6 @@ services:
       context: ./versechat-backend
       dockerfile: Dockerfile.dev
 
-    depends_on:
-      - db
-
     ports:
       - "8000:8000"
 
@@ -42,22 +39,11 @@ services:
       - interservice_network
       - backend_network
 
-  db:
-    image: postgres:18
-
-    volumes:
-      - db_data:/var/lib/postgresql
-
-    env_file:
-      - .env.dev
-
-    networks:
-      - backend_network
 
 volumes:
   api_venv:
   node_env:
-  db_data:
+  
 
 
 networks:
