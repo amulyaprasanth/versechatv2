@@ -27,6 +27,7 @@ const ChatContainer = () => {
     if (!inputMessage.trim()) return;
 
     const query = inputMessage;
+    setInputMessage("");
 
     const userMessage: Message = {
       role: "user",
@@ -34,14 +35,13 @@ const ChatContainer = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
+
     setIsLoading(true);
     try {
       const response = await sendMessage(query);
 
 
       setMessages((prev) => [...prev, response]);
-      setIsLoading(false);
     } catch (error) {
       console.error("Failed to send message:", error);
 
@@ -53,6 +53,8 @@ const ChatContainer = () => {
           error: true,
         },
       ]);
+    } finally{
+       setIsLoading(false);
     }
   };
 
@@ -66,7 +68,7 @@ const ChatContainer = () => {
               <h1 className={` ${opensans.className} text-center text-3xl`}>
                 Hi, Welcome to Versechat!
               </h1>
-              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
+              <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </div>
         ) : (
@@ -78,13 +80,13 @@ const ChatContainer = () => {
                   <MessageCard key={index} {...message} />
                 ))}
                 {
-                  isLoading && (<div className="w-4 h-4 self-start"> <MessageLoader /></div>)
+                  isLoading && (<div className="w-4 h-2 self-start"> <MessageLoader /></div>)
                 }
               </div>
 
             </div>
             <div className="shrink-0 flex justify-center">
-              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
+              <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </>
         )}
