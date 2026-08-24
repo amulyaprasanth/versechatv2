@@ -23,7 +23,7 @@ class FakeBibleAgent:
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(monkeypatch):
     fake_tools_module = types.ModuleType("versechat_backend.rag.tools")
     fake_tools_module.bible_search = object()
