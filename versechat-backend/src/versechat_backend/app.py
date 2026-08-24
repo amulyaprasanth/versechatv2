@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
         from versechat_backend.rag.tools import bible_search, wiki_tool
 
         app.state.agent = BibleAgent(
-            model_name="qwen/qwen3.6-27b", tools=[bible_search, wiki_tool]
+            model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
         )
     except Exception:
         logger.exception("Bible agent failed to initialize")
