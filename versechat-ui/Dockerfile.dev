@@ -1,17 +1,24 @@
 FROM node:22-slim AS deps
 
 WORKDIR /app
-COPY package.json package-lock.json ./
 
+COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-FROM node:22-slim AS builder
+
+FROM node:22-slim AS development
 
 WORKDIR /app
 
+ENV NODE_ENV=development
+
+COPY --chown=node:node package.json package-lock.json ./
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 
-COPY --chown=node:node . . 
+COPY --chown=node:node app ./app
+COPY --chown=node:node public ./public
+
+COPY --chown=node:node next.config.* tsconfig.json postcss.config.* ./
 
 USER node
 
