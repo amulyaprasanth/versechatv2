@@ -66,7 +66,7 @@ const ChatContainer = () => {
               <h1 className={` ${opensans.className} text-center text-3xl`}>
                 Hi, Welcome to Versechat!
               </h1>
-              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
+              <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </div>
         ) : (
@@ -84,7 +84,7 @@ const ChatContainer = () => {
 
             </div>
             <div className="shrink-0 flex justify-center">
-              <ChatInput handleMessage={onMessage} handleSend={handleSend} />
+              <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </>
         )}
