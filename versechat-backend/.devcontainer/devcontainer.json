@@ -1,18 +1,11 @@
 {
   "name": "Python Dev container",
-  "build": {
-    "dockerfile": "Dockerfile.dev",
-    "context": ".."
+  "image": "mcr.microsoft.com/devcontainers/python:3.14-bookworm",
+  "features": {
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
   },
-
-  "runArgs": [
-    "--env-file",
-    "${localWorkspaceFolder}/.env.dev"
-  ],
-  "mounts": [
-    "source=${localEnv:HOME}/.config/nvim,target=/home/vscode/.config/nvim,type=bind"
-  ],
+  "runArgs": ["--env-file", "${localWorkspaceFolder}/.env.dev"],
   "forwardPorts": [8000],
   "remoteUser": "vscode",
-  "postCreateCommand": "[ ! -d ~/.config/nvim ] && git clone https://github.com/LazyVim/starter ~/.config/nvim || true; uv sync -q"
+  "postCreateCommand": "uv sync -q"
 }
