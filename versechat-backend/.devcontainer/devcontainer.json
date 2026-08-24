@@ -6,28 +6,6 @@
   },
   "runArgs": ["--env-file", "${localWorkspaceFolder}/.env.dev"],
   "forwardPorts": [8000],
-<<<<<<< Updated upstream
-
-  "customizations": {
-    "vscode": {
-      "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
-      "settings": {
-        "python.defaultInterpreterPath": "/app/.venv/bin/python"
-      }
-    }
-  },
-
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/app,type=bind",
-
-    "source=${localWorkspaceFolderBasename}-venv,target=/app/.venv,type=volume"
-  ],
-
-  "postCreateCommand": "uv sync",
-
-  "runArgs": ["--env-file", ".env.dev"]
-=======
   "remoteUser": "vscode",
   "postCreateCommand": "uv sync -q"
->>>>>>> Stashed changes
 }

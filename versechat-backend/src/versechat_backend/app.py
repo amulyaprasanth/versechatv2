@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
 from versechat_backend.core.logger import get_logger
 from versechat_backend.models.chat import ChatRequest, ChatResponse
+
 logger = get_logger()
 
 

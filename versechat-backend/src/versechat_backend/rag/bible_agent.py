@@ -129,9 +129,12 @@ if __name__ == "__main__":  # pragma: no cover
     from versechat_backend.rag.tools import bible_search, wiki_tool
 
     assistant = BibleAgent(
-        model_name="llama-3.3-70b-versatile", tools=[bible_search, wiki_tool]
+        model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
     )
-    query = "history of israel"
+    query = "what is sin?"
     print("User:", query)
+
     answer, sources = asyncio.run(assistant.ask(query))
-    print(answer, sources)
+    print(answer)
+    print("*" * 36)
+    print(sources)
