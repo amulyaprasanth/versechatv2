@@ -1,0 +1,7 @@
+{
+  "name": "Node.js Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  "forwardPorts": [3000],
+  "remoteUser": "node",
+  "postCreateCommand": "npm install"
+}
