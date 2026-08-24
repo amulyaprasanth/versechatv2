@@ -1,3 +1,4 @@
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
@@ -56,4 +57,6 @@ async def ask_agent(request: ChatRequest):
             detail="internal error occured",
         )
 
-    return ChatResponse(role="assistant", content=answer, sources=sources)
+    return ChatResponse(
+        id=uuid.uuid4(), role="assistant", content=answer, sources=sources
+    )

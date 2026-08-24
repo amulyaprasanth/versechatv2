@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -11,6 +13,7 @@ class Source(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    id: UUID
     role: str
     content: str
     sources: list[Source]

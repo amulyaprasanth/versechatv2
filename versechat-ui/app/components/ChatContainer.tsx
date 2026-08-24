@@ -1,5 +1,6 @@
 "use client";
 
+
 import { Open_Sans } from "next/font/google";
 import { useState } from "react";
 import ChatInput from "../cards/ChatInput";
@@ -30,6 +31,7 @@ const ChatContainer = () => {
     setInputMessage("");
 
     const userMessage: Message = {
+      id: crypto.randomUUID(),
       role: "user",
       content: query,
     };
@@ -48,13 +50,14 @@ const ChatContainer = () => {
       setMessages((prev) => [
         ...prev,
         {
+          id: crypto.randomUUID(),
           role: "assistant",
           content: "Something went wrong. Please try again.",
           error: true,
         },
       ]);
-    } finally{
-       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,8 +79,8 @@ const ChatContainer = () => {
           <>
             <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="mx-auto flex max-w-3xl flex-col gap-4">
-                {messages.map((message, index) => (
-                  <MessageCard key={index} {...message} />
+                {messages.map((message) => (
+                  <MessageCard key={message.id} {...message} />
                 ))}
                 {
                   isLoading && (<div className="w-4 h-2 self-start"> <MessageLoader /></div>)
