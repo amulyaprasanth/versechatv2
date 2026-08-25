@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from versechat_backend.core.logger import get_logger
 from versechat_backend.models.chat import ChatRequest, ChatResponse
@@ -41,6 +41,17 @@ app.add_middleware(
 @app.get("/health", status_code=200)
 async def get_health():
     return JSONResponse({"message": "healthy"})
+
+
+@app.post("/ask/stream")
+async def stream_message(request: ChatRequest):
+    agent = app.state.agent
+
+    async def generate():
+        async for token in agent.stream(request.query):
+            yield token
+
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
 
 @app.post("/ask", response_model=ChatResponse)
