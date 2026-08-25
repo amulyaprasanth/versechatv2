@@ -18,7 +18,7 @@ COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node app ./app
 COPY --chown=node:node public ./public
 
-COPY --chown=node:node next.config.* tsconfig.json postcss.config.* ./
+COPY --chown=node:node next.config.ts tsconfig.json postcss.config.mjs ./
 
 USER node
 
