@@ -1,32 +1,11 @@
 {
-  "name": "Python Dev Environment",
-
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+  "name": "Python Dev container",
+  "image": "mcr.microsoft.com/devcontainers/python:3.14-bookworm",
+  "features": {
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
   },
-
-  "workspaceFolder": "/app",
-
+  "runArgs": ["--env-file", "${localWorkspaceFolder}/.env.dev"],
   "forwardPorts": [8000],
-
-  "customizations": {
-    "vscode": {
-      "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
-      "settings": {
-        "python.defaultInterpreterPath": "/app/.venv/bin/python"
-      }
-    }
-  },
-
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/app,type=bind",
-
-    "source=${localWorkspaceFolderBasename}-venv,target=/app/.venv,type=volume"
-  ],
-
-  // Automatically runs uv sync when the container is built/created
-  "postCreateCommand": "uv sync",
-
-  "runArgs": ["--env-file", ".env.dev"]
+  "remoteUser": "vscode",
+  "postCreateCommand": "uv sync -q"
 }
