@@ -113,7 +113,7 @@ async def test_bible_agent_ask_success():
     mock_agent = Mock()
     mock_agent.ainvoke = AsyncMock(return_value={"messages": [tool_msg, ai_msg]})
     agent = BibleAgent(
-        model_name="llama-3.3-70b-versatile",
+        model_name="openai/gpt-oss-20b",
         tools=[bible_search],
     )
     agent.agent = mock_agent
@@ -170,3 +170,37 @@ async def test_bible_agent_ask_runtime_error():
     mock_agent.ainvoke.assert_awaited_once_with(
         {"messages": [{"role": "user", "content": "Who is Jesus?"}]}
     )
+
+
+@pytest.mark.asyncio
+async def test_stream_yields_text():
+    agent = BibleAgent.__new__(BibleAgent)
+
+    class FakeAgent:
+        async def astream_events(self, messages, version):
+            yield {
+                "event": "on_chat_model_stream",
+                "data": {
+                    "chunk": FakeChunk("Hello"),
+                },
+            }
+
+            yield {
+                "event": "on_chat_model_stream",
+                "data": {
+                    "chunk": FakeChunk(" world"),
+                },
+            }
+
+    class FakeChunk:
+        def __init__(self, content):
+            self.content = content
+
+    agent.agent = FakeAgent()
+
+    result = []
+
+    async for token in agent.stream("what is sin?"):
+        result.append(token)
+
+    assert result == ["Hello", " world"]

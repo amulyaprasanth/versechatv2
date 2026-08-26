@@ -6,9 +6,9 @@ import { useState } from "react";
 import ChatInput from "../cards/ChatInput";
 import { Message } from "../types/chat";
 import MessageCard from "../cards/MessageCard";
-import { sendMessage } from "../api/chat";
 import MessageLoader from "../cards/MessageLoading";
 
+import { BASE_API_URL } from "../api/api"
 const opensans = Open_Sans({
   subsets: ["latin"],
 });
@@ -24,7 +24,6 @@ const ChatContainer = () => {
   };
 
   const handleSend = async () => {
-
     if (!inputMessage.trim()) return;
 
     const query = inputMessage;
@@ -37,30 +36,91 @@ const ChatContainer = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-
     setIsLoading(true);
+
+    const assistantId = crypto.randomUUID();
+
     try {
-      const response = await sendMessage(query);
+      const response = await fetch(`${BASE_API_URL}/ask/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-      setMessages((prev) => [...prev, response]);
-    } catch (error) {
-      console.error("Failed to send message:", error);
+      if (!response.body) {
+        throw new Error("No response body from server");
+      }
 
       setMessages((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: assistantId,
           role: "assistant",
-          content: "Something went wrong. Please try again.",
-          error: true,
+          content: "",
         },
       ]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let isFirstToken = false;
+      let done = false;
+
+      while (!done) {
+
+
+        const { value, done: doneReading } = await reader.read();
+
+        done = doneReading;
+
+        if (value) {
+          const chunk = decoder.decode(value, {
+            stream: !done,
+          });
+
+          if (chunk && !isFirstToken) {
+            isFirstToken = true;
+            setIsLoading(false);
+          }
+
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === assistantId
+                ? {
+                  ...message,
+                  content: message.content + chunk,
+                }
+                : message
+            )
+          );
+        }
+      }
+
+      const remaining = decoder.decode();
+
+      if (remaining) {
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === assistantId
+              ? {
+                ...message,
+                content: message.content + remaining,
+              }
+              : message
+          )
+        );
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <section id="chat-container" className="h-full">
       <div className="mx-auto h-full p-4 bg-slate-600 flex flex-col">

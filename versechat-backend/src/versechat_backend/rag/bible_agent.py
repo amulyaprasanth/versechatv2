@@ -95,11 +95,10 @@ class BibleAgent:
 
     async def ask(self, query: str) -> tuple[str, list[dict]]:
         """Ask the assistant a question with optional prior messages (memory) and get the response."""
-
-        if not isinstance(query, str) or not query.strip():
-            raise ValueError("query should not be empty")
-
         try:
+            if not isinstance(query, str) or not query.strip():
+                raise ValueError("query should not be empty")
+
             input_message = {"role": "user", "content": query}
             response = await self.agent.ainvoke({"messages": [input_message]})
             answer = response["messages"][-1].content
@@ -122,19 +121,59 @@ class BibleAgent:
             logger.error(f"Agent invocation failed: {e!s}")
             return "Sorry, something went wrong while processing your request.", []
 
+    async def stream(self, query: str):
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query should not be empty")
+
+        try:
+            async for event in self.agent.astream_events(
+                {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": query,
+                        }
+                    ]
+                },
+                version="v2",
+            ):
+                if event["event"] == "on_chat_model_stream":
+                    chunk = event["data"]["chunk"]
+
+                    if chunk.content:
+                        yield chunk.content
+
+        except RateLimitError:
+            logger.exception("Rate limit reached")
+            yield "Rate limit reached. Please try again later."
+
+        except Exception:
+            logger.exception("Agent streaming failed")
+            yield "Can't process your query now. Please try again."
+
 
 if __name__ == "__main__":  # pragma: no cover
     import asyncio
 
+    from dotenv import load_dotenv
+
     from versechat_backend.rag.tools import bible_search, wiki_tool
 
-    assistant = BibleAgent(
-        model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
-    )
-    query = "what is sin?"
-    print("User:", query)
+    load_dotenv(".env.dev")
+    os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
+    os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 
-    answer, sources = asyncio.run(assistant.ask(query))
-    print(answer)
-    print("*" * 36)
-    print(sources)
+    async def main():
+        assistant = BibleAgent(
+            model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
+        )
+
+        query = "what is sin?"
+        print("User:", query)
+
+        async for value in assistant.stream(query):
+            print(value, end="")
+
+        print()
+
+    asyncio.run(main())

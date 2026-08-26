@@ -7,7 +7,7 @@ from versechat_backend.rag.tools import bible_search
 @pytest.mark.anyio
 async def test_bible_agent():
     agent = BibleAgent(
-        model_name="llama-3.3-70b-versatile",
+        model_name="openai/gpt-oss-20b",
         tools=[bible_search],
     )
 
