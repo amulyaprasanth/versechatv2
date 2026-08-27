@@ -1,4 +1,4 @@
-name: "VerseChat-dev"
+name: "versechat-dev"
 
 services:
 
@@ -14,7 +14,7 @@ services:
       - "3000:3000"
 
     volumes:
-      - ./versechat-ui:/app
+      - ./versechat-ui:/app:z
       - node_env:/app/node_modules
 
     networks:
@@ -25,44 +25,25 @@ services:
       context: ./versechat-backend
       dockerfile: Dockerfile.dev
 
-    depends_on:
-      - db
-
     ports:
       - "8000:8000"
 
     volumes:
-      - ./versechat-backend:/app
+      - ./versechat-backend:/app:z
       - api_venv:/app/.venv
 
     env_file:
-      - .env.dev
+      - versechat-backend/.env.dev
 
     networks:
       - interservice_network
-      - backend_network
-
-  db:
-    image: postgres:18
-
-    volumes:
-      - db_data:/var/lib/postgresql
-
-    env_file:
-      - .env.dev
-
-    networks:
-      - backend_network
 
 volumes:
   api_venv:
   node_env:
-  db_data:
+
 
 
 networks:
   interservice_network:
-    driver: bridge
-
-  backend_network:
     driver: bridge

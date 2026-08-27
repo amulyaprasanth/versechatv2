@@ -1,7 +1,6 @@
 FROM node:22-slim AS deps
 
 WORKDIR /app
-
 COPY package.json package-lock.json ./
 
 RUN npm ci --no-audit --no-fund
@@ -21,11 +20,9 @@ RUN npm run build
 FROM node:22-slim AS runner
 
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-
 
 COPY --from=builder --chown=node:node /app/public ./public
 
