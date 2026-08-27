@@ -40,7 +40,7 @@ jobs:
           python-version: "3.14"
 
       - name: install requirements
-        run: pip install ruff==0.16.3  mypy==1.18.2 pytest==9.1.1 --only-binary:all
+        run: pip install ruff==0.16.3  mypy==1.18.2 pytest==9.1.1 
 
       - name: Lint
         run: ruff check src tests
