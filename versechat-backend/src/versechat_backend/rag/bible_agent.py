@@ -117,8 +117,8 @@ class BibleAgent:
         except RateLimitError:
             return "Rate limit reached! Please try after some time", []
 
-        except RuntimeError as e:
-            logger.error(f"Agent invocation failed: {e!s}")
+        except RuntimeError:
+            logger.exception("Agent invocation failed")
             return "Sorry, something went wrong while processing your request.", []
 
     async def stream(self, query: str):
