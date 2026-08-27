@@ -41,7 +41,7 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npx tsc/@5.0.0 --ignore-scripts --noEmit
+        run: npx tsc@5.0.0 --ignore-scripts --noEmit
 
       - name: Build
         run: npm run build
