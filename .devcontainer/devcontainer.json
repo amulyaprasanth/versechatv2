@@ -1,0 +1,13 @@
+{
+  "name": "VerseChat",
+  "workspaceFolder": "/workspaces/versechatv2",
+  "remoteUser": "node",
+  "postCreateCommand": "python3 -m pip install --user --upgrade pip && python3 -m pip install --user pre-commit && cd ${containerWorkspaceFolder} && pre-commit install --install-hooks && pre-commit install --hook-type pre-push",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

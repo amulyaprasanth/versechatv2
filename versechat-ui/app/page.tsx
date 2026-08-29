@@ -1,5 +1,5 @@
-import Navbar from "./components/Navbar";
-import ChatContainer from "./components/ChatContainer";
+import Navbar from "./navbar/Navbar";
+
 
 export default function Home() {
   return (
@@ -9,7 +9,6 @@ export default function Home() {
       </header>
 
       <main className="flex-1 min-h-0">
-        <ChatContainer />
       </main>
     </div>
   );

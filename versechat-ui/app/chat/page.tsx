@@ -3,10 +3,10 @@
 
 import { Open_Sans } from "next/font/google";
 import { useState } from "react";
-import ChatInput from "../cards/ChatInput";
-import { Message } from "../types/chat";
-import MessageCard from "../cards/MessageCard";
-import MessageLoader from "../cards/MessageLoading";
+import ChatInput from "./ChatInput";
+import { Message } from "./chat";
+import MessageCard from "./MessageCard";
+import MessageLoader from "./MessageLoading";
 
 import { BASE_API_URL } from "../api/api"
 const opensans = Open_Sans({

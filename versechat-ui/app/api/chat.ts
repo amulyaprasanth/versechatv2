@@ -1,6 +1,6 @@
 import axios from "axios";
 import { BASE_API_URL } from "./api";
-import { Message } from "../types/chat";
+import { Message } from "../chat/chat";
 
 export const sendMessage = async (query: string): Promise<Message> => {
   try {
