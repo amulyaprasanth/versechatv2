@@ -8,7 +8,6 @@ import { Message } from "./chat";
 import MessageCard from "./MessageCard";
 import MessageLoader from "./MessageLoading";
 
-import { BASE_API_URL } from "../api/api"
 const opensans = Open_Sans({
   subsets: ["latin"],
 });
@@ -41,7 +40,7 @@ const ChatContainer = () => {
     const assistantId = crypto.randomUUID();
 
     try {
-      const response = await fetch(`${BASE_API_URL}/ask/stream`, {
+      const response = await fetch('api/ask/stream', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
