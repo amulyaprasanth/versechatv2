@@ -1,5 +1,5 @@
 
-import { Message } from "../types/chat";
+import { Message } from "../chat/chat";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
