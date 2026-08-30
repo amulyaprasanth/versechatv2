@@ -16,6 +16,7 @@ services:
     volumes:
       - ./versechat-ui:/app:z
       - node_env:/app/node_modules
+      - node_nex:/app/.next
 
     networks:
       - interservice_network
@@ -41,6 +42,7 @@ services:
 volumes:
   api_venv:
   node_env:
+  node_nex:
 
 
 
