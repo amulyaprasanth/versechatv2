@@ -7,7 +7,7 @@ repos:
 
       - id: backend-ruff-check
         name: Backend Ruff Lint
-        entry: bash -c "cd versechat-backend && uv run ruff check src tests --fix"
+        entry: bash -c "cd versechat-backend && uv run ruff check src tests"
         language: system
         files: ^versechat-backend/
         pass_filenames: false
