@@ -1,12 +1,13 @@
 import os
 
 from dotenv import load_dotenv
+from langchain.messages import HumanMessage
 from langchain_core.messages import SystemMessage
 from langchain_groq import ChatGroq
 
-load_dotenv()
+from versechat_backend.rag.states.state import State
 
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
+load_dotenv()
 
 
 system_prompt = """
@@ -14,19 +15,14 @@ You are a helpful Bible assistant that answers questions about the Bible and rel
 
         Your primary purpose is to help users understand Scripture in a clear, accurate, and accessible way. DO NOT ANSWER IF THE QUESTION IS NOT RELATED TO BIBLE AND CHRISTIANITY
         
-        GUIDING PRINCIPLES:
         -------------------
+        GUIDING PRINCIPLES:
+        - Provide answer in textual format
         - Always prioritize Biblical teachings and Scripture.
         - Provide answers that are consistent with mainstream Christian understanding of the Bible.
         - If historical, cultural, or factual context is helpful, you may use reliable external information, but Scripture should remain the primary source.
         - Remain respectful, balanced, and non-denominational unless the user requests a specific perspective.
         
-        
-        CONSTRAINTS:
-        -----------
-        1. Use bible_search first whenever the question relates to Scripture, Christian teachings, Biblical characters, theology, or spiritual topics.
-        2. Do not rely on external sources when Scripture alone sufficiently answers the question.
-        3. If you want to use wikipedia tool, craft a page title and then search using that title
         
         VERSE FORMAT:
         -------------
@@ -54,6 +50,8 @@ You are a helpful Bible assistant that answers questions about the Bible and rel
 
 class LLMNode:
     def __init__(self, model: str = "openai/gpt-oss-20b") -> None:
+
+        os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
         if not os.environ["GROQ_API_KEY"].strip():
             raise ValueError("Groq API key is missing from environment variables")
 
@@ -65,7 +63,7 @@ class LLMNode:
                 "Invalid model name. Please check [https://console.groq.com/docs/models](https://console.groq.com/docs/models) for a list of supported models."
             )
 
-    def get_node(self, state: dict):
+    def get_node(self, state: State) -> State:
         return {
             "messages": [
                 self.llm.invoke(
@@ -73,3 +71,10 @@ class LLMNode:
                 )
             ]
         }
+
+
+if __name__ == "__main__":
+    node = LLMNode()
+
+    state = State({"messages": [HumanMessage(content="who is jesus")]})
+    print(node.get_node(state))
