@@ -1,6 +1,7 @@
 repos:
   - repo: local
     hooks:
+
       # ==========================================
       # VERSECHAT BACKEND (Python / uv)
       # ==========================================
@@ -21,6 +22,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: backend-mypy
+        name: Backend Type Check
+        entry: bash -c "cd versechat-backend && uv run mypy src/versechat_backend"
+        language: system
+        files: ^versechat-backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: backend-pytest
         name: Backend Tests
         entry: bash -c "cd versechat-backend && uv run pytest"
@@ -28,6 +37,7 @@ repos:
         files: ^versechat-backend/
         pass_filenames: false
         stages: [pre-push]
+
 
       # ==========================================
       # VERSECHAT UI (Node / npm)
