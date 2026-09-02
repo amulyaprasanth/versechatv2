@@ -25,6 +25,7 @@ dependencies = [
     "langchain-groq>=1.1.3",
     "langchain-huggingface>=1.2.2",
     "langchain-text-splitters>=1.1.2",
+    "langgraph>=1.2.10",
     "numpy>=2.5.2",
     "pyjwt>=2.13.0",
     "pytest-asyncio>=1.4.0",
@@ -49,6 +50,12 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.16.2",
 ]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
 
 [[tool.mypy.overrides]]
 module = ["wikipediaapi.*"]

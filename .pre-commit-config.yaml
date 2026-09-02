@@ -1,14 +1,13 @@
 repos:
   - repo: local
     hooks:
-
       # ==========================================
       # VERSECHAT BACKEND (Python / uv)
       # ==========================================
 
       - id: backend-ruff-check
         name: Backend Ruff Lint
-        entry: bash -c "cd versechat-backend && uv run ruff check src tests"
+        entry: bash -c "cd versechat-backend && ruff check src tests --fix"
         language: system
         files: ^versechat-backend/
         pass_filenames: false
@@ -16,15 +15,7 @@ repos:
 
       - id: backend-ruff-format
         name: Backend Ruff Format
-        entry: bash -c "cd versechat-backend && uv run ruff format --check src tests"
-        language: system
-        files: ^versechat-backend/
-        pass_filenames: false
-        stages: [pre-commit]
-
-      - id: backend-mypy
-        name: Backend Type Check
-        entry: bash -c "cd versechat-backend && uv run mypy src/versechat_backend"
+        entry: bash -c "cd versechat-backend && ruff format --check src tests"
         language: system
         files: ^versechat-backend/
         pass_filenames: false
@@ -32,12 +23,11 @@ repos:
 
       - id: backend-pytest
         name: Backend Tests
-        entry: bash -c "cd versechat-backend && uv run pytest"
+        entry: bash -c "cd versechat-backend && pytest"
         language: system
         files: ^versechat-backend/
         pass_filenames: false
         stages: [pre-push]
-
 
       # ==========================================
       # VERSECHAT UI (Node / npm)
