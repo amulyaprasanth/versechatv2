@@ -14,12 +14,7 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        from versechat_backend.rag.bible_agent import BibleAgent
-        from versechat_backend.rag.tools import bible_search, wiki_tool
-
-        app.state.agent = BibleAgent(
-            model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
-        )
+        app.state.agent = None
     except Exception:
         logger.exception("Bible agent failed to initialize")
         raise

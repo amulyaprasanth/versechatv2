@@ -28,6 +28,7 @@ def test_graph_has_llm_node(mock_llm_node):
     graph_structure = graph.get_graph()
 
     assert "llm" in graph_structure.nodes
+    assert "tool_node" in graph_structure.nodes
 
 
 @patch("versechat_backend.rag.graph.graph_builder.LLMNode")
