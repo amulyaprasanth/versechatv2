@@ -45,8 +45,21 @@ class GraphBuilder:
 
 
 if __name__ == "__main__":
+    import asyncio
+
     graph = GraphBuilder().build_graph()
 
-    messages = graph.invoke({"messages": [HumanMessage(content="who is jesus?")]})
-    for message in messages["messages"]:
-        message.pretty_print()
+    # messages = graph.invoke({"messages": [HumanMessage(content="who is jesus?")]})
+    async def main():
+        async for chunk in graph.astream(
+            {"messages": [HumanMessage(content="who is jesus?")]},
+            stream_mode=["messages"],
+            version="v2",
+        ):
+            if chunk["type"] == "messages":
+                message_chunk, metadata = chunk["data"]
+
+                if metadata["langgraph_node"] == "llm" and message_chunk.content:
+                    print(message_chunk.content, end="|", flush=True)
+
+    asyncio.run(main())

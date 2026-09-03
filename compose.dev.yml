@@ -1,7 +1,6 @@
 name: "versechat-dev"
 
 services:
-
   frontend:
     build:
       context: ./versechat-ui
@@ -14,7 +13,7 @@ services:
       - "3000:3000"
 
     volumes:
-      - ./versechat-ui:/app:z
+      - ./versechat-ui:/app
       - node_env:/app/node_modules
       - node_nex:/app/.next
 
@@ -30,7 +29,7 @@ services:
       - "8000:8000"
 
     volumes:
-      - ./versechat-backend:/app:z
+      - ./versechat-backend:/app
       - api_venv:/app/.venv
 
     env_file:
@@ -43,8 +42,6 @@ volumes:
   api_venv:
   node_env:
   node_nex:
-
-
 
 networks:
   interservice_network:
