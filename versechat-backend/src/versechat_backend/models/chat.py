@@ -16,4 +16,6 @@ class ChatResponse(BaseModel):
     id: UUID
     role: str
     content: str
-    sources: list[Source]
+
+
+#   sources: list[Source]
