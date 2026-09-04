@@ -19,12 +19,12 @@ export const Navbar = () => {
         Versechat
       </motion.h1>
       <motion.p
-        initial={{ y: -5, scale: 0.5, opacity:0 }}
-        animate={{ y: 0, scale: 1, opacity:1 }}
-        transition={{ duration: 0.3, delay:0.3}}
+        initial={{ y: -5, scale: 0.5, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
         viewport={{ once: true }}
         className="bg-yellow-300 mb-auto rounded-xl text-black p-1">
-        alpha
+        0.2.0
       </motion.p>
     </div>
   );
