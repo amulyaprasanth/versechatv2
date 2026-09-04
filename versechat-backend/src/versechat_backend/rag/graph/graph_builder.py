@@ -2,10 +2,10 @@ from typing import Literal
 
 from langchain.messages import AIMessage, HumanMessage
 from langgraph.graph import END, START, StateGraph
+from langgraph.prebuilt.tool_node import ToolNode
 
 from versechat_backend.core.logger import get_logger
 from versechat_backend.rag.nodes.llm_node import LLMNode
-from versechat_backend.rag.nodes.tool_node import ToolNode
 from versechat_backend.rag.states.state import State
 from versechat_backend.rag.tools import bible_search, wiki_tool
 
@@ -18,7 +18,7 @@ class GraphBuilder:
         self.tools_by_name = {tool.name: tool for tool in self.tools}
         self.builder = StateGraph(State)
         self.llm_node = LLMNode(self.tools).get_node
-        self.tool_node = ToolNode(self.tools_by_name).tool_node
+        self.tool_node = ToolNode(self.tools)
 
     def should_continue(self, state: State) -> Literal["tool_node", "end"]:
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # messages = graph.invoke({"messages": [HumanMessage(content="who is jesus?")]})
     async def main():
         async for chunk in graph.astream(
-            {"messages": [HumanMessage(content="who is jesus?")]},
+            {"messages": [HumanMessage(content="god is love")]},
             stream_mode=["messages"],
             version="v2",
         ):

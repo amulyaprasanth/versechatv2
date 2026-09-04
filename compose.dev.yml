@@ -12,6 +12,8 @@ services:
     ports:
       - "3000:3000"
 
+    env_file:
+      - versechat-ui/.env.dev
     volumes:
       - ./versechat-ui:/app
       - node_env:/app/node_modules
