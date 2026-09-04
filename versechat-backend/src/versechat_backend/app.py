@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from langchain.messages import HumanMessage
 
 from versechat_backend.core.logger import get_logger
 from versechat_backend.models.chat import ChatRequest, ChatResponse
+from versechat_backend.rag.graph.graph_builder import GraphBuilder
 
 logger = get_logger()
 
@@ -14,12 +16,7 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        from versechat_backend.rag.bible_agent import BibleAgent
-        from versechat_backend.rag.tools import bible_search, wiki_tool
-
-        app.state.agent = BibleAgent(
-            model_name="openai/gpt-oss-20b", tools=[bible_search, wiki_tool]
-        )
+        app.state.agent = GraphBuilder().build_graph()
     except Exception:
         logger.exception("Bible agent failed to initialize")
         raise
@@ -48,8 +45,15 @@ async def stream_message(request: ChatRequest):
     agent = app.state.agent
 
     async def generate():
-        async for token in agent.stream(request.query):
-            yield token
+        async for chunk in agent.astream(
+            {"messages": [HumanMessage(content=request.query)]},
+            stream_mode=["messages"],
+            version="v2",
+        ):
+            if chunk["type"] == "messages":
+                message_chunk, metadata = chunk["data"]
+                if metadata["langgraph_node"] == "llm" and message_chunk.content:
+                    yield message_chunk.content
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
@@ -59,7 +63,10 @@ async def ask_agent(request: ChatRequest):
     agent = app.state.agent
 
     try:
-        answer, sources = await agent.ask(request.query)
+        messages = {"messages": [HumanMessage(content=request.query)]}
+        response = agent.invoke(messages)
+
+        answer = response["messages"][-1].content
 
     except Exception:
         logger.exception("failed to serve user request")
@@ -68,6 +75,4 @@ async def ask_agent(request: ChatRequest):
             detail="internal error occured",
         )
 
-    return ChatResponse(
-        id=uuid.uuid4(), role="assistant", content=answer, sources=sources
-    )
+    return ChatResponse(id=uuid.uuid4(), role="assistant", content=answer)

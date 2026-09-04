@@ -51,7 +51,7 @@ def bible_search(query: str) -> list[dict]:
 async def wiki_tool(topic: str, query: str) -> str:
     """Userful for retrieving factual context from Wikipedia for a specific topic"""
 
-    docs = retriever.invoke(query=query, topic=topic)
+    docs = await retriever.ainvoke(query=query, topic=topic)
 
     if not docs:
         return "No relavant information found on Wikipedia for this topic."
