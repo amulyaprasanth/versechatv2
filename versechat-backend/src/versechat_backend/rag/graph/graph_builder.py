@@ -49,7 +49,6 @@ if __name__ == "__main__":
 
     graph = GraphBuilder().build_graph()
 
-    # messages = graph.invoke({"messages": [HumanMessage(content="who is jesus?")]})
     async def main():
         async for chunk in graph.astream(
             {"messages": [HumanMessage(content="god is love")]},
