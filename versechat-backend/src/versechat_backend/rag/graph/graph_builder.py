@@ -15,7 +15,6 @@ logger = get_logger()
 class GraphBuilder:
     def __init__(self):
         self.tools = [bible_search, wiki_tool]
-        self.tools_by_name = {tool.name: tool for tool in self.tools}
         self.builder = StateGraph(State)
         self.llm_node = LLMNode(self.tools).get_node
         self.tool_node = ToolNode(self.tools)
