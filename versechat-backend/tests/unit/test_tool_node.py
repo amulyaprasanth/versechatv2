@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 from langchain.messages import AIMessage, ToolMessage
-
 from versechat_backend.rag.nodes.tool_node import ToolNode
+
 from versechat_backend.rag.states.state import State
 
 
