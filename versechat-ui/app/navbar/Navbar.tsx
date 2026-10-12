@@ -24,7 +24,7 @@ export const Navbar = () => {
         transition={{ duration: 0.3, delay: 0.3 }}
         viewport={{ once: true }}
         className="bg-yellow-300 mb-auto rounded-xl text-black p-1">
-        0.2.0
+        0.2.1
       </motion.p>
     </div>
   );
