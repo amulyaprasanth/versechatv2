@@ -1,6 +1,7 @@
 from typing import Literal
 
 from langchain.messages import AIMessage, HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt.tool_node import ToolNode
 
@@ -18,6 +19,7 @@ class GraphBuilder:
         self.builder = StateGraph(State)
         self.llm_node = LLMNode(self.tools).get_node
         self.tool_node = ToolNode(self.tools)
+        self.checkpointer = InMemorySaver()
 
     def should_continue(self, state: State) -> Literal["tool_node", "end"]:
 
@@ -40,17 +42,28 @@ class GraphBuilder:
         )
         self.builder.add_edge("tool_node", "llm")
 
-        return self.builder.compile()
+        return self.builder.compile(checkpointer=self.checkpointer)
 
 
 if __name__ == "__main__":
     import asyncio
+    import os
+
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
+    os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 
     graph = GraphBuilder().build_graph()
 
     async def main():
         async for chunk in graph.astream(
             {"messages": [HumanMessage(content="god is love")]},
+            {
+                "configurable": {"thread_id": "1"},
+            },
             stream_mode=["messages"],
             version="v2",
         ):

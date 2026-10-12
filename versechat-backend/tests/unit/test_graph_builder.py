@@ -44,7 +44,10 @@ def test_graph_invokes_llm_node(mock_llm_node):
 
     graph = GraphBuilder().build_graph()
 
-    result = graph.invoke({"messages": [HumanMessage(content="Who is Jesus?")]})
+    result = graph.invoke(
+        {"messages": [HumanMessage(content="Who is Jesus?")]},
+        {"configurable": {"thread_id": "1"}},
+    )
 
     print(result["messages"])
     assert result["messages"]

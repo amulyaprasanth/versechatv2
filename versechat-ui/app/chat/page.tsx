@@ -17,10 +17,15 @@ const ChatContainer = () => {
   const [inputMessage, setInputMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const isEmpty = messages.length === 0;
-
+  const [convId, setConvId] = useState<string>("")
   const onMessage = (message: string) => {
     setInputMessage(message);
   };
+
+  if (messages.length == 0 && convId == "") {
+    setConvId(crypto.randomUUID());
+  }
+
 
   const handleSend = async () => {
     if (!inputMessage.trim()) return;
@@ -45,7 +50,10 @@ const ChatContainer = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          "query": query,
+          "conv_id": convId
+        }),
       });
 
       if (!response.ok) {
