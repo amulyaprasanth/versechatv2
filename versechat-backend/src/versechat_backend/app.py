@@ -47,6 +47,7 @@ async def stream_message(request: ChatRequest):
     async def generate():
         async for chunk in agent.astream(
             {"messages": [HumanMessage(content=request.query)]},
+            {"configurable": {"thread_id": request.conv_id}},
             stream_mode=["messages"],
             version="v2",
         ):
@@ -64,7 +65,10 @@ async def ask_agent(request: ChatRequest):
 
     try:
         messages = {"messages": [HumanMessage(content=request.query)]}
-        response = agent.invoke(messages)
+
+        response = agent.invoke(
+            messages, {"configurable": {"thread_id": request.conv_id}}
+        )
 
         answer = response["messages"][-1].content
 
