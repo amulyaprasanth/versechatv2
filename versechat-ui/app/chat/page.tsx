@@ -1,6 +1,5 @@
 "use client";
 
-
 import { Open_Sans } from "next/font/google";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
@@ -8,6 +7,8 @@ import { Message } from "./chat";
 import MessageCard from "./MessageCard";
 import MessageLoader from "./MessageLoading";
 import Image from "next/image";
+import chatBg from "@/public/images/chat-bg.jpg";
+import chatBgMobile from "@/public/images/chat-bg-mobile.jpg";
 
 const opensans = Open_Sans({
   subsets: ["latin"],
@@ -131,20 +132,22 @@ const ChatContainer = () => {
   return (
     <section id="chat-container" className="relative h-full">
       <Image
-        src="/images/chat-bg.jpg"
+        src={chatBg}
         alt="Reading Bible"
         fill
         priority
+        placeholder="blur"
         sizes="(min-width: 768px) 100vw, 0px"
         className="hidden object-cover md:block"
       />
 
       {/* Mobile background */}
       <Image
-        src="/images/chat-bg-mobile.jpg"
+        src={chatBgMobile}
         alt="Reading Bible"
         fill
         priority
+        placeholder="blur"
         sizes="(max-width: 767px) 100vw, 0px"
         className="object-cover md:hidden"
       />

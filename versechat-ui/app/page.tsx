@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Open_Sans } from "next/font/google";
+import heroBg from "@/public/images/hero-desktop.jpg";
+import heroBgMobile from "@/public/images/hero-mobile.jpg";
 
 const opensans = Open_Sans({ subsets: ["latin"] });
 
@@ -81,20 +83,22 @@ export default function Home() {
     <main className={`${opensans.className} relative h-dvh w-full overflow-hidden`}>
       {/* Desktop background */}
       <Image
-        src="/images/hero-desktop.jpg"
+        src={heroBg}
         alt="Reading Bible"
         fill
         priority
+        placeholder="blur"
         sizes="(min-width: 768px) 100vw, 0px"
         className="hidden object-cover md:block"
       />
 
       {/* Mobile background */}
       <Image
-        src="/images/hero-mobile.jpg"
+        src={heroBgMobile}
         alt="Reading Bible"
         fill
         priority
+        placeholder="blur"
         sizes="(max-width: 767px) 100vw, 0px"
         className="object-cover md:hidden"
       />
