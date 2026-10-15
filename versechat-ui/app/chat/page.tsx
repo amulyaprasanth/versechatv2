@@ -7,6 +7,7 @@ import ChatInput from "./ChatInput";
 import { Message } from "./chat";
 import MessageCard from "./MessageCard";
 import MessageLoader from "./MessageLoading";
+import Image from "next/image";
 
 const opensans = Open_Sans({
   subsets: ["latin"],
@@ -39,7 +40,7 @@ const ChatContainer = () => {
       content: query,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev: Message[]) => [...prev, userMessage]);
     setIsLoading(true);
 
     const assistantId = crypto.randomUUID();
@@ -64,7 +65,7 @@ const ChatContainer = () => {
         throw new Error("No response body from server");
       }
 
-      setMessages((prev) => [
+      setMessages((prev: Message[]) => [
         ...prev,
         {
           id: assistantId,
@@ -80,7 +81,6 @@ const ChatContainer = () => {
 
       while (!done) {
 
-
         const { value, done: doneReading } = await reader.read();
 
         done = doneReading;
@@ -95,7 +95,7 @@ const ChatContainer = () => {
             setIsLoading(false);
           }
 
-          setMessages((prev) =>
+          setMessages((prev: Message[]) =>
             prev.map((message) =>
               message.id === assistantId
                 ? {
@@ -111,7 +111,7 @@ const ChatContainer = () => {
       const remaining = decoder.decode();
 
       if (remaining) {
-        setMessages((prev) =>
+        setMessages((prev: Message[]) =>
           prev.map((message) =>
             message.id === assistantId
               ? {
@@ -129,13 +129,33 @@ const ChatContainer = () => {
     }
   };
   return (
-    <section id="chat-container" className="h-full">
-      <div className="mx-auto h-full p-4 bg-slate-600 flex flex-col">
+    <section id="chat-container" className="relative h-full">
+      <Image
+        src="/images/chat-bg.jpg"
+        alt="Reading Bible"
+        fill
+        priority
+        sizes="(min-width: 768px) 100vw, 0px"
+        className="hidden object-cover md:block"
+      />
+
+      {/* Mobile background */}
+      <Image
+        src="/images/chat-bg-mobile.jpg"
+        alt="Reading Bible"
+        fill
+        priority
+        sizes="(max-width: 767px) 100vw, 0px"
+        className="object-cover md:hidden"
+      />
+      {/* Darker overlay so elements are readable against the dark bg image */}
+      <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+      <div className="absolute inset-0 pt-16 flex flex-col">
         {isEmpty ? (
           /* Empty state */
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-3xl flex flex-col gap-2">
-              <h1 className={` ${opensans.className} text-center text-3xl`}>
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="w-full max-w-3xl flex flex-col gap-4">
+              <h1 className={`${opensans.className} text-center text-4xl font-semibold text-white drop-shadow-lg`}>
                 Hi, Welcome to Versechat!
               </h1>
               <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
@@ -144,18 +164,20 @@ const ChatContainer = () => {
         ) : (
           /* Chat state */
           <>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="mx-auto flex max-w-3xl flex-col gap-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+              <div className="mx-auto flex max-w-3xl flex-col gap-4 pb-4">
                 {messages.map((message) => (
                   <MessageCard key={message.id} {...message} />
                 ))}
-                {
-                  isLoading && (<div className="w-4 h-2 self-start"> <MessageLoader /></div>)
-                }
+                {isLoading && (
+                  <div className="w-4 h-2 self-start">
+                    <MessageLoader />
+                  </div>
+                )}
               </div>
-
             </div>
-            <div className="shrink-0 flex justify-center">
+            <div className="shrink-0 flex justify-center px-4 py-4
+                            bg-gradient-to-t from-black/40 to-transparent">
               <ChatInput value={inputMessage} handleMessage={onMessage} handleSend={handleSend} />
             </div>
           </>

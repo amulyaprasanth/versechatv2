@@ -9,7 +9,7 @@ const raleway = Raleway({
 
 export const Navbar = () => {
   return (
-    <div className="h-16 bg-cyan-600 flex justify-center shadow-l shadow-white">
+    <div className="sticky bg-transparent  h-16 flex justify-center shadow-l shadow-white">
       <motion.h1
         initial={{ y: -5, scale: 0.5 }}
         animate={{ y: 0, scale: 1 }}
@@ -23,8 +23,8 @@ export const Navbar = () => {
         animate={{ y: 0, scale: 1, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.3 }}
         viewport={{ once: true }}
-        className="bg-yellow-300 mb-auto rounded-xl text-black p-1">
-        0.2.0
+        className="mb-auto rounded-xl text-white p-1">
+        0.3.0
       </motion.p>
     </div>
   );
