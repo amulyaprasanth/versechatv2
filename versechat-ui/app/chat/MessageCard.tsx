@@ -6,7 +6,12 @@ import remarkGfm from 'remark-gfm';
 const MessageCard = ({ role, content }: Message) => {
   return (
     <div
-      className={`max-w-3xl p-2 rounded-2xl ${role === "assistant" ? "self-start text-white text-l/5" : "self-end bg-stone-100 text-black rounded-br-none"}`}>
+      className={`max-w-3xl px-4 py-3 rounded-2xl backdrop-blur-md border shadow-lg text-white
+        ${role === "assistant"
+          ? "self-start bg-white/15 border-white/30 rounded-tl-none"
+          : "self-end bg-white/30 border-white/50 rounded-tr-none"
+        }`}
+    >
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {content}
       </ReactMarkdown>
@@ -14,4 +19,4 @@ const MessageCard = ({ role, content }: Message) => {
   );
 };
 
-export default MessageCard; 
+export default MessageCard;
