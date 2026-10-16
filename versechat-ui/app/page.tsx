@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Open_Sans } from "next/font/google";
-import heroBg from "@/public/images/hero-desktop.jpg";
-import heroBgMobile from "@/public/images/hero-mobile.jpg";
+import heroBg from "@/public/images/hero-desktop.webp";
+import heroBgMobile from "@/public/images/hero-mobile.webp";
 
 const opensans = Open_Sans({ subsets: ["latin"] });
 
