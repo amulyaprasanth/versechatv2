@@ -7,8 +7,8 @@ import { Message } from "./chat";
 import MessageCard from "./MessageCard";
 import MessageLoader from "./MessageLoading";
 import Image from "next/image";
-import chatBg from "@/public/images/chat-bg.jpg";
-import chatBgMobile from "@/public/images/chat-bg-mobile.jpg";
+import chatBg from "@/public/images/chat-bg.webp";
+import chatBgMobile from "@/public/images/chat-bg-mobile.webp";
 
 const opensans = Open_Sans({
   subsets: ["latin"],
