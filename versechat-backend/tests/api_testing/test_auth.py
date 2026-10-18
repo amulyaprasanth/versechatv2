@@ -1,7 +1,6 @@
 import uuid
-import pytest
+
 from fastapi.testclient import TestClient
-from versechat_backend.app import app
 
 
 def test_auth_flow_end_to_end(client: TestClient):

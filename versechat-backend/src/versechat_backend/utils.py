@@ -1,10 +1,10 @@
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
+import jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
-import jwt
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -107,7 +107,7 @@ def authenticate_user(session: Session, email: str, password: str) -> User | Non
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Creates a JWT token from data with UTC expiration."""
     to_encode = data.copy()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if expires_delta:
         expire = now + expires_delta
     else:

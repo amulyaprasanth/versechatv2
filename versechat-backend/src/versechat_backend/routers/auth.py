@@ -16,7 +16,6 @@ from versechat_backend.utils import (
     add_user,
     authenticate_user,
     create_access_token,
-    get_user,
     get_user_by_id,
 )
 
@@ -32,7 +31,7 @@ ACCESS_TOKEN_EXPIRY_MINUTES = 30
 
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: Session = Depends(get_db),
+    session: Annotated(Session, Depends(get_db)),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,7 +77,7 @@ def get_current_user(
 )
 async def register_user(
     user_data: UserRegistrationForm,
-    session: Session = Depends(get_db),
+    session: Annotated[Session, Depends(get_db)],
 ) -> User:
     """
     Registers a new user account.
@@ -102,7 +101,7 @@ async def register_user(
 )
 async def get_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: Session = Depends(get_db),
+    session: Annotated[Session, Depends(get_db)],
 ) -> Token:
     """
     Authenticates a user via OAuth2 password flow and returns a JWT access token.
@@ -141,4 +140,3 @@ async def get_current_user_profile(
 ) -> User:
     """Returns the profile of the currently authenticated user."""
     return current_user
-
