@@ -1,14 +1,19 @@
 import uuid
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from langchain.messages import HumanMessage
 
 from versechat_backend.core.logger import get_logger
+from versechat_backend.database import Base, engine
 from versechat_backend.models.chat import ChatRequest, ChatResponse
+from versechat_backend.models.db import User
 from versechat_backend.rag.graph.graph_builder import GraphBuilder
+from versechat_backend.routers.auth import get_current_user
+from versechat_backend.routers.auth import router as auth_router
 
 logger = get_logger()
 
@@ -16,15 +21,21 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        Base.metadata.create_all(bind=engine)
         app.state.agent = GraphBuilder().build_graph()
     except Exception:
-        logger.exception("Bible agent failed to initialize")
+        logger.exception("Application failed to initialize")
         raise
 
-    yield
+    try:
+        yield
+    finally:
+        engine.dispose()
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,7 +52,10 @@ async def get_health():
 
 
 @app.post("/ask/stream")
-async def stream_message(request: ChatRequest):
+async def stream_message(
+    request: ChatRequest, user: Annotated[User, Depends(get_current_user)]
+):
+
     agent = app.state.agent
 
     async def generate():
@@ -60,7 +74,9 @@ async def stream_message(request: ChatRequest):
 
 
 @app.post("/ask", response_model=ChatResponse)
-async def ask_agent(request: ChatRequest):
+async def ask_agent(
+    request: ChatRequest, user: Annotated[User, Depends(get_current_user)]
+):
     agent = app.state.agent
 
     try:

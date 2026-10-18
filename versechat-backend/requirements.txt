@@ -17,4 +17,5 @@ redis[asyncio]
 uvicorn
 gunicorn
 certifi
-
+pyjwt
+pwdlib

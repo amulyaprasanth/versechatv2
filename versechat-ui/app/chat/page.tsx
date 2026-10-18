@@ -45,9 +45,8 @@ const ChatContainer = () => {
     setIsLoading(true);
 
     const assistantId = crypto.randomUUID();
-
     try {
-      const response = await fetch('api/ask/stream', {
+      const response = await fetch('/api/ask/stream', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,7 +58,23 @@ const ChatContainer = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const responseText = await response.text();
+        let detail: string | undefined;
+
+        try {
+          const errorData: { detail?: unknown } = JSON.parse(responseText);
+          if (typeof errorData.detail === "string") {
+            detail = errorData.detail;
+          }
+        } catch {
+          // The backend may return a plain-text error body.
+        }
+
+        if (response.status === 401) {
+          throw new Error("Your session has expired. Please sign in again.");
+        }
+
+        throw new Error(detail ?? "Sorry, I couldn't get a response. Please try again.");
       }
 
       if (!response.body) {
@@ -124,7 +139,24 @@ const ChatContainer = () => {
         );
       }
     } catch (error) {
-      console.error(error);
+      const content = error instanceof Error && error.message !== "Failed to fetch"
+        ? error.message
+        : "Unable to connect right now. Please check your connection and try again.";
+
+      setMessages((prev) => {
+        const errorMessage: Message = {
+          id: assistantId,
+          role: "assistant",
+          content,
+          error: true,
+        };
+
+        return prev.some((message) => message.id === assistantId)
+          ? prev.map((message) =>
+            message.id === assistantId ? errorMessage : message,
+          )
+          : [...prev, errorMessage];
+      });
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +205,8 @@ const ChatContainer = () => {
                   <MessageCard key={message.id} {...message} />
                 ))}
                 {isLoading && (
-                  <div className="w-4 h-2 self-start">
+                  <div className="self-start flex items-center gap-3 rounded-2xl rounded-tl-none border border-white/25 bg-white/15 px-4 py-3 text-sm text-white/80 shadow-lg backdrop-blur-md">
+                    <span>VerseChat is thinking</span>
                     <MessageLoader />
                   </div>
                 )}

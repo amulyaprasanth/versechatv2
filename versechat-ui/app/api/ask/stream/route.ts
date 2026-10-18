@@ -1,17 +1,34 @@
-export const runtime = "nodejs";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
     // Read the JSON sent from your frontend
-    const body = await request.json();
+    const token = (await cookies()).get('token')?.value;
 
+    if (!token) {
+      return NextResponse.json(
+        { detail: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     // Send it server-to-server to FastAPI
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { detail: "Invalid JSON request body" },
+        { status: 400 },
+      );
+    }
     const response = await fetch(
       `${process.env.FASTAPI_URL}/ask/stream`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
       }
