@@ -15,7 +15,9 @@ from versechat_backend.models.db import User
 load_dotenv()
 load_dotenv(".env.dev")
 
-SECRET_KEY = os.getenv("SECRET_KEY", "temporary-fallback-secret-key-change-in-production")
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "temporary-fallback-secret-key-change-in-production"
+)
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
 password_hash = PasswordHash.recommended()
@@ -44,7 +46,7 @@ def get_user_by_id(session: Session, user_id: uuid.UUID | str) -> User | None:
     if isinstance(user_id, str):
         try:
             user_id = uuid.UUID(user_id)
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             return None
     stmt = select(User).where(User.id == user_id)
     return session.scalars(stmt).one_or_none()
@@ -115,5 +117,3 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode.update({"exp": expire, "iat": now})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
-    

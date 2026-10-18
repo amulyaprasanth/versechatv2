@@ -31,7 +31,7 @@ ACCESS_TOKEN_EXPIRY_MINUTES = 30
 
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    session: Annotated(Session, Depends(get_db)),
+    session: Annotated[Session, Depends(get_db)],
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
