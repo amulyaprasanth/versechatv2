@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       }
     );
 
-    let data: { detail?: unknown; access_token?: string };
+    let data: unknown;
 
     try {
       data = await response.json();
@@ -44,19 +44,47 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!data || typeof data !== "object") {
+      return NextResponse.json(
+        { detail: "Authentication service returned an invalid response." },
+        { status: 502 },
+      );
+    }
+
+    const authData = data as {
+      detail?: unknown;
+      access_token?: unknown;
+      refresh_token?: unknown;
+    };
+
     if (!response.ok) {
       return NextResponse.json(
         {
           detail:
-            typeof data.detail === "string" ? data.detail : "Login failed",
+            typeof authData.detail === "string"
+              ? authData.detail
+              : "Login failed",
         },
         { status: response.status }
       );
     }
 
-    if (typeof data.access_token !== "string" || !data.access_token.trim()) {
+    if (
+      typeof authData.access_token !== "string" ||
+      !authData.access_token.trim()
+    ) {
       return NextResponse.json(
-        { detail: "Authentication service returned an invalid token." },
+        { detail: "Authentication service returned an invalid access token." },
+        { status: 502 },
+      );
+    }
+
+    if (
+      typeof authData.refresh_token !== "string" ||
+      !authData.refresh_token.trim()
+    ) {
+      return NextResponse.json(
+        { detail: "Authentication service returned an invalid refresh token." },
         { status: 502 },
       );
     }
@@ -64,12 +92,19 @@ export async function POST(request: Request) {
     const result = NextResponse.json({ ok: true });
 
     // set token in cookie
-    result.cookies.set('token', data.access_token, {
+    result.cookies.set('token', authData.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 30 // Match the backend's 30-minute token expiry
+    })
+    result.cookies.set('refreshToken', authData.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30
     });
 
     return result
