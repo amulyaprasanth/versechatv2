@@ -1,31 +1,32 @@
-import sys
-import types
+from contextlib import asynccontextmanager
+from importlib import import_module
 
 import pytest
-from fastapi.testclient import TestClient
-
-from versechat_backend.app import app
 
 
-class FailingBibleAgent:
-    def __init__(self, *args, **kwargs):
-        raise ValueError("GROQ_API_KEY is missing")
+@pytest.mark.asyncio
+async def test_app_does_not_start_when_agent_initialization_fails(monkeypatch):
+    app_module = import_module("versechat_backend.app")
 
+    class FakeCheckpointer:
+        async def setup(self):
+            return None
 
-def test_app_does_not_start_when_agent_initialization_fails(monkeypatch):
-    fake_tools_module = types.ModuleType("versechat_backend.rag.tools")
-    fake_tools_module.bible_search = object()
-    fake_tools_module.wiki_tool = object()
+    @asynccontextmanager
+    async def fake_saver_context(*_args, **_kwargs):
+        yield FakeCheckpointer()
 
-    fake_agent_module = types.ModuleType("versechat_backend.rag.bible_agent")
-    fake_agent_module.BibleAgent = FailingBibleAgent
+    def fail_graph_builder(_checkpointer):
+        raise ValueError("graph initialization failed")
 
-    monkeypatch.setitem(sys.modules, "versechat_backend.rag.tools", fake_tools_module)
-    monkeypatch.setitem(
-        sys.modules,
-        "versechat_backend.rag.bible_agent",
-        fake_agent_module,
+    monkeypatch.setattr(app_module.Base.metadata, "create_all", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        app_module.AsyncPostgresSaver,
+        "from_conn_string",
+        staticmethod(lambda *_args, **_kwargs: fake_saver_context()),
     )
+    monkeypatch.setattr(app_module, "GraphBuilder", fail_graph_builder)
 
-    with pytest.raises(ValueError, match="GROQ_API_KEY is missing"), TestClient(app):
-        pass
+    with pytest.raises(ValueError, match="graph initialization failed"):
+        async with app_module.lifespan(app_module.app):
+            pass
