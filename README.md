@@ -49,11 +49,15 @@ flowchart TD
    cd versechatv2
    ```
 
-3. Run using Docker compose:
+3. Copy `.env.example` to `.env`, set your Groq API key and a local PostgreSQL password, then start the stack:
 
    ```bash
-   docker-compose up --build
+   cp .env.example .env
+   docker compose up --build
    ```
+
+   PostgreSQL runs as a Compose service and keeps its data in the `postgres_data` volume. The API waits for the database health check before starting.
+   The existing SQLite file is left untouched; its data is not copied into PostgreSQL automatically.
 
 4. Access the application at `http://localhost:3000`.
 

@@ -1,8 +1,11 @@
 fastapi[standard]
+alembic
 sqlalchemy
+psycopg[binary]
 python-dotenv
 langchain
 langchain-groq
+langgraph-checkpoint-postgres
 google-auth
 pyjwt
 langchain-community

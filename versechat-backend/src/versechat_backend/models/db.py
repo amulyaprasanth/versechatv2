@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from versechat_backend.database import Base
@@ -50,42 +50,24 @@ class Conversation(Base):
         ForeignKey("users.id"),
         index=True,
     )
+    title: Mapped[str] = mapped_column(
+        String(255),
+        default="New conversation",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     user: Mapped[User] = relationship(back_populates="conversations")
-    messages: Mapped[list[Message]] = relationship(
-        back_populates="conversation",
-        cascade="all, delete-orphan",
-    )
 
     def __repr__(self) -> str:
         return f"Conversation(id={self.id!r}, user_id={self.user_id!r})"
-
-
-class Message(Base):
-    __tablename__ = "messages"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True,
-        default=uuid.uuid4,
-    )
-    conversation_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("conversations.id"),
-        index=True,
-    )
-    role: Mapped[str] = mapped_column(String(20))
-    content: Mapped[str] = mapped_column(Text)
-
-    conversation: Mapped[Conversation] = relationship(
-        back_populates="messages",
-    )
-
-    def __repr__(self) -> str:
-        return (
-            f"Message(id={self.id!r}, "
-            f"conversation_id={self.conversation_id!r}, "
-            f"role={self.role!r}, "
-            f"content={self.content!r})"
-        )
 
 
 class RefreshToken(Base):
@@ -140,7 +122,7 @@ class RefreshTokenRotation(Base):
 
     token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     family_id: Mapped[uuid.UUID] = mapped_column(nullable=False, index=True)
-    encrypted_tokens: Mapped[str] = mapped_column(Text, nullable=False)
+    encrypted_tokens: Mapped[str] = mapped_column(String, nullable=False)
     grace_expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

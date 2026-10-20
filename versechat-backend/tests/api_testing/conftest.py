@@ -1,47 +1,84 @@
 import sys
 import types
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
+# Importing the production tools module loads the embedding model. Replace it
+# before importing the app so tests remain offline and deterministic.
+fake_tools_module = types.ModuleType("versechat_backend.rag.tools")
+fake_tools_module.bible_search = object()
+fake_tools_module.wiki_tool = object()
+sys.modules["versechat_backend.rag.tools"] = fake_tools_module
+
+from versechat_backend import utils
 from versechat_backend.app import app
+from versechat_backend.database import Base, get_db
 
 
-class FakeBibleAgent:
-    def __init__(self, *args, **kwargs):
-        pass
+class FakeAgent:
+    async def ainvoke(self, *args, **kwargs):
+        return {"messages": [SimpleNamespace(content="Test answer")]}
 
-    async def ask(self, query: str):
-        return (
-            "Moses led Israel out of Egypt.",
-            [
-                {
-                    "tool_name": "bible_search",
-                    "tool_output": "Exodus 20:5",
-                }
-            ],
-        )
+    async def aget_state(self, *args, **kwargs):
+        return SimpleNamespace(values={"messages": []})
+
+    async def astream(self, *args, **kwargs):
+        yield {
+            "type": "messages",
+            "data": (SimpleNamespace(content="Test answer"), {"langgraph_node": "llm"}),
+        }
+
+
+class FakeCheckpointer:
+    def __init__(self):
+        self.adelete_thread = AsyncMock()
 
 
 @pytest.fixture
 def client(monkeypatch):
-    fake_tools_module = types.ModuleType("versechat_backend.rag.tools")
-    fake_tools_module.bible_search = object()
-    fake_tools_module.wiki_tool = object()
-
-    fake_agent_module = types.ModuleType("versechat_backend.rag.bible_agent")
-    fake_agent_module.BibleAgent = FakeBibleAgent
-
-    monkeypatch.setitem(
-        sys.modules,
-        "versechat_backend.rag.tools",
-        fake_tools_module,
+    # Use an isolated in-memory database and a fake graph/checkpointer. These
+    # tests must never connect to the developer's or production PostgreSQL DB.
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
-    monkeypatch.setitem(
-        sys.modules,
-        "versechat_backend.rag.bible_agent",
-        fake_agent_module,
+    Base.metadata.create_all(bind=test_engine)
+    TestSession = sessionmaker(bind=test_engine, autoflush=True)
+    monkeypatch.setattr(utils, "hash_password", lambda _password: "test-hash")
+    monkeypatch.setattr(
+        utils,
+        "verify_password",
+        lambda password, hashed: (
+            hashed == "test-hash" and password == "SecurePassword123!"
+        ),
     )
 
-    with TestClient(app) as test_client:
-        yield test_client
+    def override_get_db():
+        with TestSession() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    checkpointer = FakeCheckpointer()
+
+    @asynccontextmanager
+    async def test_lifespan(_app):
+        _app.state.checkpointer = checkpointer
+        _app.state.agent = FakeAgent()
+        yield
+
+    monkeypatch.setattr(app.router, "lifespan_context", test_lifespan)
+
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        test_engine.dispose()

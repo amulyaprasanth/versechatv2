@@ -76,6 +76,17 @@ def test_auth_flow_end_to_end(client: TestClient):
         data={"username": unique_email, "password": "WrongPassword123!"},
     )
     assert bad_login_response.status_code == 401
+    assert bad_login_response.json()["detail"] == "Incorrect username or password"
+
+    unknown_user_response = client.post(
+        "/auth/token",
+        data={
+            "username": f"missing_{uuid.uuid4().hex}@example.com",
+            "password": "WrongPassword123!",
+        },
+    )
+    assert unknown_user_response.status_code == 401
+    assert unknown_user_response.json()["detail"] == bad_login_response.json()["detail"]
 
     # 7. Get current user profile with valid Bearer token
     me_response = client.get(

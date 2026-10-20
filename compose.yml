@@ -1,6 +1,26 @@
 name: "versechat-prod"
 
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-versechat}
+      POSTGRES_USER: ${POSTGRES_USER:-versechat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - versechat_net
+
   frontend:
     build:
       context: ./versechat-ui
@@ -23,13 +43,23 @@ services:
     ports:
       - "8000:8000"
 
+    depends_on:
+      postgres:
+        condition: service_healthy
+
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-versechat}
+      POSTGRES_USER: ${POSTGRES_USER:-versechat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     networks:
       - versechat_net
 
 volumes:
-  prod_data:
+  postgres_data:
 
 networks:
   versechat_net:
