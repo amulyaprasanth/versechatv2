@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -20,10 +21,15 @@ def build_database_url() -> str | URL:
     if explicit_url:
         return explicit_url
 
-    password = os.getenv("POSTGRES_PASSWORD")
+    password_file = os.getenv("POSTGRES_PASSWORD_FILE")
+    password = (
+        Path(password_file).read_text(encoding="utf-8").strip()
+        if password_file
+        else os.getenv("POSTGRES_PASSWORD")
+    )
     if not password:
         raise RuntimeError(
-            "PostgreSQL is required. Set POSTGRES_PASSWORD or DATABASE_URL."
+            "PostgreSQL is required. Set POSTGRES_PASSWORD_FILE, POSTGRES_PASSWORD, or DATABASE_URL."
         )
 
     return URL.create(
