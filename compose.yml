@@ -4,10 +4,8 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-versechat}
-      POSTGRES_USER: ${POSTGRES_USER:-versechat}
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    env_file:
+      - compose.env
     secrets:
       - postgres_password
     ports:
@@ -31,6 +29,9 @@ services:
     depends_on:
       - api
 
+    env_file:
+      - compose.env
+
     ports:
       - "3000:3000"
 
@@ -50,13 +51,8 @@ services:
         condition: service_healthy
 
     env_file:
+      - compose.env
       - .env
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-versechat}
-      POSTGRES_USER: ${POSTGRES_USER:-versechat}
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     secrets:
       - postgres_password
     networks:
@@ -67,7 +63,7 @@ volumes:
 
 secrets:
   postgres_password:
-    file: ${POSTGRES_PASSWORD_FILE:-.secrets/postgres_password}
+    file: .secrets/postgres_password
 
 networks:
   versechat_net:
