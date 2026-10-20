@@ -49,7 +49,7 @@ flowchart TD
    cd versechatv2
    ```
 
-3. Copy `.env.example` to `.env`, set your Groq API key, create the ignored password file, and start the stack:
+3. Copy `.env.example` to `.env`, set your application secrets, create the ignored PostgreSQL password file, and start the stack:
 
    ```bash
    cp .env.example .env
