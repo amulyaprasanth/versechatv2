@@ -28,6 +28,7 @@ from versechat_backend.routers.auth import router as auth_router
 from versechat_backend.routers.conversations import conversation_router
 
 logger = get_logger()
+_title_refinement_tasks: set[asyncio.Task[None]] = set()
 
 
 def ensure_conversation(
@@ -102,6 +103,12 @@ async def _refine_conversation_title(conv_id: uuid.UUID, query: str):
         logger.warning("Could not generate title for conversation %s: %s", conv_id, e)
 
 
+def _schedule_title_refinement(conv_id: uuid.UUID, query: str) -> None:
+    task = asyncio.create_task(_refine_conversation_title(conv_id, query))
+    _title_refinement_tasks.add(task)
+    task.add_done_callback(_title_refinement_tasks.discard)
+
+
 @app.post("/ask/stream")
 async def stream_message(
     request: ChatRequest,
@@ -117,7 +124,7 @@ async def stream_message(
     session.commit()
 
     if should_refine:
-        asyncio.create_task(_refine_conversation_title(conversation.id, request.query))
+        _schedule_title_refinement(conversation.id, request.query)
 
     agent = app.state.agent
 
@@ -151,7 +158,7 @@ async def ask_agent(
     session.commit()
 
     if should_refine:
-        asyncio.create_task(_refine_conversation_title(conversation.id, request.query))
+        _schedule_title_refinement(conversation.id, request.query)
 
     agent = app.state.agent
 

@@ -7,7 +7,9 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-versechat}
       POSTGRES_USER: ${POSTGRES_USER:-versechat}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Required environment variable is missing}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -65,7 +67,9 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-versechat}
       POSTGRES_USER: ${POSTGRES_USER:-versechat}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Required environment variable is missing}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
 
     networks:
       - interservice_network
@@ -75,6 +79,10 @@ volumes:
   node_env:
   node_nex:
   postgres_data:
+
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE:-.secrets/postgres_password}
 
 networks:
   interservice_network:

@@ -49,14 +49,17 @@ flowchart TD
    cd versechatv2
    ```
 
-3. Copy `.env.example` to `.env`, set your Groq API key and a local PostgreSQL password, then start the stack:
+3. Copy `.env.example` to `.env`, set your Groq API key, create the ignored password file, and start the stack:
 
    ```bash
    cp .env.example .env
+   mkdir -p .secrets
+   openssl rand -base64 36 > .secrets/postgres_password
+   chmod 600 .secrets/postgres_password
    docker compose up --build
    ```
 
-   PostgreSQL runs as a Compose service and keeps its data in the `postgres_data` volume. The API waits for the database health check before starting.
+   Compose mounts the password file as a secret for PostgreSQL and the API. PostgreSQL keeps its data in the `postgres_data` volume. The API waits for the database health check before starting.
    The existing SQLite file is left untouched; its data is not copied into PostgreSQL automatically.
 
 4. Access the application at `http://localhost:3000`.
