@@ -19,7 +19,7 @@ function formatRelativeTime(dateString?: string | null): string {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "";
+    if (Number.isNaN(date.getTime())) return "";
     const now = new Date();
     const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
     if (diffSec < 60) return "Just now";

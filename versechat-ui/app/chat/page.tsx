@@ -52,7 +52,7 @@ const ChatContainer = () => {
       }
     }
 
-    loadInitialConversations();
+    void loadInitialConversations();
     return () => {
       ignore = true;
     };
@@ -116,7 +116,7 @@ const ChatContainer = () => {
         if (convId === id) {
           const remaining = conversations.filter((c) => c.id !== id);
           if (remaining.length > 0) {
-            handleSelectConversation(remaining[0].id);
+            void handleSelectConversation(remaining[0].id);
           } else {
             handleNewChat();
           }
