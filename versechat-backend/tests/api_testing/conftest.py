@@ -1,8 +1,6 @@
-import sys
-import types
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,16 +8,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Importing the production tools module loads the embedding model. Replace it
-# before importing the app so tests remain offline and deterministic.
-fake_tools_module = types.ModuleType("versechat_backend.rag.tools")
-fake_tools_module.bible_search = object()
-fake_tools_module.wiki_tool = object()
-sys.modules["versechat_backend.rag.tools"] = fake_tools_module
-
 from versechat_backend import utils
-from versechat_backend.app import app
 from versechat_backend.database import Base, get_db
+from versechat_backend.rag.wiki_retriever import WikiRetriever
+
+# The app imports the real tool definitions, but skip model initialization so
+# API tests do not need Hugging Face downloads.
+with patch.object(WikiRetriever, "__init__", return_value=None):
+    from versechat_backend.app import app
 
 
 class FakeAgent:
