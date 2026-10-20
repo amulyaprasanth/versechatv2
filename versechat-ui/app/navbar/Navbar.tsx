@@ -94,7 +94,7 @@ export const Navbar = () => {
         transition={{ duration: 0.3, delay: 0.3 }}
         viewport={{ once: true }}
         className="mb-auto rounded-xl text-white p-1">
-        0.3.0
+        1.0.0
       </motion.p>
       <div ref={profileMenuRef} className="absolute right-4 top-1/2 -translate-y-1/2">
         <button
