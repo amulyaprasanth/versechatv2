@@ -4,7 +4,12 @@ from langchain.messages import AIMessage
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
 
-from versechat_backend.rag.graph.graph_builder import GraphBuilder
+from versechat_backend.rag.wiki_retriever import WikiRetriever
+
+# Importing tools constructs WikiRetriever eagerly. Skip only its expensive
+# embedding initialization while importing the real, correctly typed tools.
+with patch.object(WikiRetriever, "__init__", return_value=None):
+    from versechat_backend.rag.graph.graph_builder import GraphBuilder
 
 
 def build_graph_builder():

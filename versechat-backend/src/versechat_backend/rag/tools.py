@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 import requests
 from langchain.tools import tool
 from pydantic import BaseModel, Field
@@ -16,10 +14,7 @@ class WikiSearchInput(BaseModel):
     )
 
 
-@lru_cache(maxsize=1)
-def _get_wiki_retriever() -> WikiRetriever:
-    """Create the embedding-backed retriever only when a Wiki search is used."""
-    return WikiRetriever()
+retriever = WikiRetriever()
 
 
 @tool(
@@ -56,7 +51,7 @@ def bible_search(query: str) -> list[dict]:
 async def wiki_tool(topic: str, query: str) -> str:
     """Userful for retrieving factual context from Wikipedia for a specific topic"""
 
-    docs = await _get_wiki_retriever().ainvoke(query=query, topic=topic)
+    docs = await retriever.ainvoke(query=query, topic=topic)
 
     if not docs:
         return "No relavant information found on Wikipedia for this topic."
