@@ -1,6 +1,26 @@
 name: "versechat-dev"
 
 services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    env_file:
+      - compose.env
+    secrets:
+      - postgres_password
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - interservice_network
+
   frontend:
     build:
       context: ./versechat-ui
@@ -14,6 +34,7 @@ services:
 
     env_file:
       - versechat-ui/.env.dev
+      - compose.frontend.env
     volumes:
       - ./versechat-ui:/app:z
       - node_env:/app/node_modules:z
@@ -27,6 +48,10 @@ services:
       context: ./versechat-backend
       dockerfile: Dockerfile.dev
 
+    depends_on:
+      postgres:
+        condition: service_healthy
+
     ports:
       - "8000:8000"
 
@@ -36,6 +61,9 @@ services:
 
     env_file:
       - versechat-backend/.env.dev
+      - compose.env
+    secrets:
+      - postgres_password
 
     networks:
       - interservice_network
@@ -44,6 +72,11 @@ volumes:
   api_venv:
   node_env:
   node_nex:
+  postgres_data:
+
+secrets:
+  postgres_password:
+    file: .secrets/postgres_password
 
 networks:
   interservice_network:

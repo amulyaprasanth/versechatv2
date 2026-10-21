@@ -1,10 +1,10 @@
 const MessageLoader = () => {
   return (
-    <div id="loader" className="flex gap-1 justify-center items-center" >
-      <div id="dot" className="w-[12px] h-[12px] bg-blue-300 rounded-xl animate-bounce "></div>
-      <div id="dot" className="w-[12px] h-[12px] bg-blue-300 rounded-xl animate-bounce [animation-delay: 0.15s]"></div>
-      <div id="dot" className="w-[12px] h-[12px] bg-blue-300 rounded-xl animate-bounce [animation-delay:0.3s]"></div>
-    </div>
+    <output aria-label="Assistant is thinking" aria-live="polite" className="flex items-center gap-1.5">
+      <span aria-hidden="true" className="h-2 w-2 rounded-full bg-sky-200 animate-bounce [animation-delay:-0.3s]" />
+      <span aria-hidden="true" className="h-2 w-2 rounded-full bg-sky-200 animate-bounce [animation-delay:-0.15s]" />
+      <span aria-hidden="true" className="h-2 w-2 rounded-full bg-sky-200 animate-bounce" />
+    </output>
   )
 }
 export default MessageLoader

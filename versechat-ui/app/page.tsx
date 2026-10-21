@@ -80,7 +80,9 @@ const stack = [
 
 export default function Home() {
   return (
-    <main className={`${opensans.className} relative h-dvh w-full overflow-hidden`}>
+    <main
+      className={`${opensans.className} relative h-dvh w-full overflow-hidden`}
+    >
       {/* Desktop background */}
       <Image
         src={heroBg}
@@ -108,26 +110,31 @@ export default function Home() {
 
       {/* Scrollable content column */}
       <div className="relative h-full overflow-y-auto">
-        <div className="min-h-full flex flex-col justify-center items-center
+        <div
+          className="min-h-full flex flex-col justify-center items-center
                         px-5 py-16
-                        md:px-8 md:py-20">
-
+                        md:px-8 md:py-20"
+        >
           {/* ── Hero ── */}
           <div className="text-center mb-12 md:mb-14">
-            <h1 className="text-5xl font-bold tracking-tight text-white drop-shadow-lg
-                           md:text-7xl">
+            <h1
+              className="text-5xl font-bold tracking-tight text-white drop-shadow-lg
+                           md:text-7xl"
+            >
               VerseChat
             </h1>
 
-            <p className="mt-4 text-base text-white/80 max-w-sm mx-auto leading-relaxed
-                          md:text-xl md:max-w-2xl md:mt-5">
+            <p
+              className="mt-4 text-base text-white/80 max-w-sm mx-auto leading-relaxed
+                          md:text-xl md:max-w-2xl md:mt-5"
+            >
               AI-powered Bible assistant delivering contextual, Scripture-based
               answers — enriched with Wikipedia and web search.
             </p>
 
             {/* CTA */}
             <Link
-              href="/chat"
+              href="/login"
               className="inline-block mt-8 px-9 py-3.5 rounded-full
                          bg-white text-gray-900 font-semibold text-base shadow-lg
                          hover:bg-white/90 active:scale-95 transition-all duration-150
@@ -139,9 +146,11 @@ export default function Home() {
 
           {/* ── Feature cards ── */}
           {/* Mobile: vertical stack  |  Desktop: 3-column grid */}
-          <div className="grid grid-cols-1 gap-4 w-full max-w-xs
+          <div
+            className="grid grid-cols-1 gap-4 w-full max-w-xs
                           sm:grid-cols-3 sm:max-w-3xl sm:gap-6
-                          mb-10 md:mb-12">
+                          mb-10 md:mb-12"
+          >
             {features.map((f) => (
               <div
                 key={f.title}
@@ -176,7 +185,6 @@ export default function Home() {
               </span>
             ))}
           </div>
-
         </div>
       </div>
     </main>
