@@ -1,19 +1,25 @@
-import type { SubmitEvent } from 'react';
+import React from 'react';
+
 type ChatInputProps = {
   value: string;
   handleMessage: (value: string) => void;
   handleSend: () => void;
+  disabled?: boolean;
 };
 
 const ChatInput = ({
   value,
   handleMessage,
   handleSend,
+  disabled = false,
 }: ChatInputProps) => {
-  const onSubmit = (event: SubmitEvent) => {
+  const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    handleSend();
+    if (!disabled && value.trim()) {
+      handleSend();
+    }
   };
+
 
 
   return (
