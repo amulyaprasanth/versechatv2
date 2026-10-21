@@ -36,6 +36,35 @@ export function clearAuthCookies(response: NextResponse) {
   }
 }
 
+function createUnauthorizedResponse(detail: string) {
+  const response = NextResponse.json({ detail }, { status: 401 });
+  clearAuthCookies(response);
+  return response;
+}
+
+export async function refreshAuthTokens(
+  refreshToken: string,
+): Promise<TokenPair | null> {
+  const response = await fetch(`${process.env.FASTAPI_URL}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+
+  const data: unknown = await response.json().catch(() => null);
+  if (
+    !data ||
+    typeof data !== "object" ||
+    typeof (data as Partial<TokenPair>).access_token !== "string" ||
+    typeof (data as Partial<TokenPair>).refresh_token !== "string"
+  ) {
+    return null;
+  }
+  return data as TokenPair;
+}
+
 export async function proxyToBackend(
   path: string,
   options?: RequestInit,
@@ -46,12 +75,7 @@ export async function proxyToBackend(
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (!accessToken && !refreshToken) {
-      const unauthorized = NextResponse.json(
-        { detail: "Not authenticated" },
-        { status: 401 }
-      );
-      clearAuthCookies(unauthorized);
-      return unauthorized;
+      return createUnauthorizedResponse("Not authenticated");
     }
 
     const makeReq = (token: string) => {
@@ -72,41 +96,15 @@ export async function proxyToBackend(
     }
 
     if ((!response || response.status === 401) && refreshToken) {
-      const refreshRes = await fetch(`${process.env.FASTAPI_URL}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-        cache: "no-store",
-      });
-
-      if (!refreshRes.ok) {
-        const unauthorized = NextResponse.json(
-          { detail: "Your session has expired." },
-          { status: 401 }
-        );
-        clearAuthCookies(unauthorized);
-        return unauthorized;
+      refreshedTokens = (await refreshAuthTokens(refreshToken)) ?? undefined;
+      if (!refreshedTokens) {
+        return createUnauthorizedResponse("Your session has expired.");
       }
-
-      const tokenData = await refreshRes.json();
-      if (
-        tokenData &&
-        typeof tokenData === "object" &&
-        typeof tokenData.access_token === "string" &&
-        typeof tokenData.refresh_token === "string"
-      ) {
-        refreshedTokens = tokenData as TokenPair;
-        response = await makeReq(refreshedTokens.access_token);
-      }
+      response = await makeReq(refreshedTokens.access_token);
     }
 
     if (!response) {
-      const unauthorized = NextResponse.json(
-        { detail: "Authentication failed" },
-        { status: 401 }
-      );
-      clearAuthCookies(unauthorized);
-      return unauthorized;
+      return createUnauthorizedResponse("Authentication failed");
     }
 
     if (response.status === 204) {

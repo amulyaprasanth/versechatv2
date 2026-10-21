@@ -1,33 +1,15 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  refreshAuthTokens,
+  setAuthCookies,
+  type TokenPair,
+} from "../../fetch-backend";
 
 type UserProfile = {
   fullname: string;
   email: string;
 };
-
-type TokenPair = {
-  access_token: string;
-  refresh_token: string;
-};
-
-function setAuthCookies(response: NextResponse, tokens: TokenPair) {
-  const secure = process.env.NODE_ENV === "production";
-  response.cookies.set("token", tokens.access_token, {
-    httpOnly: true,
-    secure,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 30,
-  });
-  response.cookies.set("refreshToken", tokens.refresh_token, {
-    httpOnly: true,
-    secure,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
-}
 
 function clearAuthCookies(response: NextResponse) {
   const secure = process.env.NODE_ENV === "production";
@@ -42,6 +24,12 @@ function clearAuthCookies(response: NextResponse) {
   }
 }
 
+function isUserProfile(value: unknown): value is UserProfile {
+  if (!value || typeof value !== "object") return false;
+  const profile = value as Partial<UserProfile>;
+  return typeof profile.fullname === "string" && typeof profile.email === "string";
+}
+
 async function readProfile(accessToken: string) {
   return fetch(`${process.env.FASTAPI_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -49,82 +37,59 @@ async function readProfile(accessToken: string) {
   });
 }
 
+function sessionExpiredResponse() {
+  const response = NextResponse.json(
+    { detail: "Your session has expired." },
+    { status: 401 },
+  );
+  clearAuthCookies(response);
+  return response;
+}
+
+function errorResponse(
+  detail: string,
+  status: number,
+  tokens?: TokenPair,
+) {
+  const response = NextResponse.json({ detail }, { status });
+  if (tokens) setAuthCookies(response, tokens);
+  return response;
+}
+
 export async function GET() {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("token")?.value;
     const refreshToken = cookieStore.get("refreshToken")?.value;
-
-    if (!accessToken && !refreshToken) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
+    if (!accessToken && !refreshToken) return sessionExpiredResponse();
 
     let response = accessToken ? await readProfile(accessToken) : undefined;
     let refreshedTokens: TokenPair | undefined;
 
     if ((!response || response.status === 401) && refreshToken) {
-      const refreshResponse = await fetch(
-        `${process.env.FASTAPI_URL}/auth/refresh`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-          cache: "no-store",
-        },
-      );
-
-      if (!refreshResponse.ok) {
-        const result = NextResponse.json(
-          { detail: "Your session has expired." },
-          { status: 401 },
-        );
-        clearAuthCookies(result);
-        return result;
-      }
-
-      const tokenData: unknown = await refreshResponse.json();
-      if (
-        !tokenData ||
-        typeof tokenData !== "object" ||
-        typeof (tokenData as Partial<TokenPair>).access_token !== "string" ||
-        typeof (tokenData as Partial<TokenPair>).refresh_token !== "string"
-      ) {
-        return NextResponse.json(
-          { detail: "Authentication service returned invalid tokens." },
-          { status: 502 },
-        );
-      }
-
-      refreshedTokens = tokenData as TokenPair;
+      refreshedTokens = await refreshAuthTokens(refreshToken) ?? undefined;
+      if (!refreshedTokens) return sessionExpiredResponse();
       response = await readProfile(refreshedTokens.access_token);
     }
 
     if (!response?.ok) {
-      const result = NextResponse.json(
-        { detail: "Unable to load profile." },
-        { status: response?.status ?? 502 },
-      );
-      if (refreshedTokens) setAuthCookies(result, refreshedTokens);
-      if (response?.status === 401) clearAuthCookies(result);
-      return result;
+      const statusCode = response?.status ?? 502;
+      if (statusCode === 401) return sessionExpiredResponse();
+      return errorResponse("Unable to load profile.", statusCode, refreshedTokens);
     }
 
-    const profile: unknown = await response.json();
-    if (
-      !profile ||
-      typeof profile !== "object" ||
-      typeof (profile as Partial<UserProfile>).fullname !== "string" ||
-      typeof (profile as Partial<UserProfile>).email !== "string"
-    ) {
-      return NextResponse.json(
-        { detail: "Authentication service returned an invalid profile." },
-        { status: 502 },
+    const profile: unknown = await response.json().catch(() => null);
+    if (!isUserProfile(profile)) {
+      return errorResponse(
+        "Authentication service returned an invalid profile.",
+        502,
+        refreshedTokens,
       );
     }
 
     const result = NextResponse.json({
-      fullname: (profile as UserProfile).fullname,
-      email: (profile as UserProfile).email,
+      fullname: profile.fullname,
+      email: profile.email,
     });
     if (refreshedTokens) setAuthCookies(result, refreshedTokens);
     return result;

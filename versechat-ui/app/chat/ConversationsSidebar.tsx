@@ -83,6 +83,7 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg
+              aria-hidden="true"
               className="w-5 h-5 text-sky-400"
               fill="none"
               stroke="currentColor"
@@ -112,7 +113,7 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
               className="md:hidden p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
               aria-label="Close conversation menu"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -126,6 +127,7 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
           className="group relative flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-sky-500/25 via-indigo-500/25 to-purple-500/25 hover:from-sky-500/35 hover:via-indigo-500/35 hover:to-purple-500/35 border border-white/20 hover:border-white/40 shadow-lg hover:shadow-sky-500/10 active:scale-[0.98] transition-all duration-200"
         >
           <svg
+            aria-hidden="true"
             className="w-4 h-4 text-sky-300 group-hover:rotate-90 transition-transform duration-200"
             fill="none"
             stroke="currentColor"
@@ -147,6 +149,7 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
               className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/30 focus:bg-white/10 transition"
             />
             <svg
+              aria-hidden="true"
               className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-white/40"
               fill="none"
               stroke="currentColor"
@@ -169,21 +172,21 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-white/10">
-        {isLoading && conversations.length === 0 ? (
-          /* Loading skeleton */
-          <div className="space-y-2 p-2">
-            {[1, 2, 3, 4].map((i) => (
+        {isLoading && conversations.length === 0 && (
+          <div className="space-y-2 p-2" aria-label="Loading conversations">
+            {[1, 2, 3, 4].map((item) => (
               <div
-                key={i}
+                key={item}
                 className="h-12 rounded-xl bg-white/5 border border-white/5 animate-pulse"
               />
             ))}
           </div>
-        ) : filteredConversations.length === 0 ? (
-          /* Empty state */
+        )}
+
+        {!isLoading && filteredConversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 mb-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -210,111 +213,99 @@ export const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({
               </button>
             )}
           </div>
-        ) : (
-          filteredConversations.map((item) => {
-            const isActive = item.id === activeId;
-            const isDeleting = isDeletingId === item.id;
-            const isConfirming = confirmDeleteId === item.id;
-            const timeAgo = formatRelativeTime(item.updated_at || item.created_at);
+        )}
 
-            return (
-              <div
-                key={item.id}
-                role="button"
-                tabIndex={0}
+        {filteredConversations.map((item) => {
+          const isActive = item.id === activeId;
+          const isDeleting = isDeletingId === item.id;
+          const isConfirming = confirmDeleteId === item.id;
+          const timeAgo = formatRelativeTime(item.updated_at || item.created_at);
+          const activeStyles = isActive
+            ? "bg-white/15 border-white/25 text-white shadow-md shadow-black/20"
+            : "text-white/70 hover:text-white hover:bg-white/10 border-transparent";
+
+          return (
+            <div
+              key={item.id}
+              className={`group relative flex items-center justify-between gap-2 rounded-xl border px-2 py-1.5 transition-all duration-150 ${activeStyles} ${isDeleting ? "opacity-50" : ""}`}
+            >
+              <button
+                type="button"
                 onClick={() => onSelectConversation(item.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    onSelectConversation(item.id);
-                  }
-                }}
-                className={`group relative flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? "bg-white/15 border border-white/25 text-white shadow-md shadow-black/20"
-                    : "text-white/70 hover:text-white hover:bg-white/10 border border-transparent"
-                } ${isDeleting ? "opacity-50 pointer-events-none" : ""}`}
+                disabled={isDeleting}
+                aria-current={isActive ? "page" : undefined}
+                className="flex min-w-0 flex-1 items-start gap-2.5 py-1 text-left disabled:cursor-wait"
               >
-                {/* Left side: Icon + Title + Timestamp */}
-                <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                  <div className="mt-0.5 shrink-0 text-white/50 group-hover:text-sky-300 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-white/50 group-hover:text-sky-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.75}
+                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                  />
+                </svg>
+                <span className="min-w-0 flex-1">
+                  <span
+                    className={`block truncate text-sm font-medium ${isActive ? "text-white" : "text-white/80"}`}
+                    title={item.title || "New conversation"}
+                  >
+                    {item.title || "New conversation"}
+                  </span>
+                  {timeAgo && (
+                    <span className="block truncate text-[11px] text-white/40">
+                      {timeAgo}
+                    </span>
+                  )}
+                </span>
+              </button>
+
+              <div className="shrink-0 flex items-center">
+                {isDeleting && (
+                  <div aria-label="Deleting conversation" className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                )}
+                {!isDeleting && isConfirming && (
+                  <div className="flex items-center gap-1 bg-red-950/80 border border-red-500/50 rounded-lg px-2 py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={(event) => handleConfirmDelete(item.id, event)}
+                      className="text-xs font-semibold text-red-200 hover:text-white transition"
+                      title="Confirm delete"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelDelete}
+                      className="text-xs text-white/60 hover:text-white ml-1"
+                      title="Cancel"
+                      aria-label="Cancel deletion"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {!isDeleting && !isConfirming && (
+                  <button
+                    type="button"
+                    onClick={(event) => handleStartDelete(item.id, event)}
+                    aria-label={`Delete conversation ${item.title || ""}`}
+                    className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/20 active:scale-95 transition-all duration-150"
+                    title="Delete conversation"
+                  >
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={1.75}
-                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v3M4 7h16"
                       />
                     </svg>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-sm truncate font-medium ${
-                        isActive ? "text-white" : "text-white/80"
-                      }`}
-                      title={item.title || "New conversation"}
-                    >
-                      {item.title || "New conversation"}
-                    </p>
-                    {timeAgo && (
-                      <p className="text-[11px] text-white/40 truncate">
-                        {timeAgo}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right side: Delete button / Inline confirm */}
-                <div className="shrink-0 flex items-center">
-                  {isDeleting ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : isConfirming ? (
-                    <div className="flex items-center gap-1 bg-red-950/80 border border-red-500/50 rounded-lg px-2 py-1 shadow-lg">
-                      <button
-                        type="button"
-                        onClick={(e) => handleConfirmDelete(item.id, e)}
-                        className="text-xs font-semibold text-red-200 hover:text-white transition"
-                        title="Confirm delete"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelDelete}
-                        className="text-xs text-white/60 hover:text-white ml-1"
-                        title="Cancel"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => handleStartDelete(item.id, e)}
-                      aria-label={`Delete conversation ${item.title || ""}`}
-                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/20 active:scale-95 transition-all duration-150"
-                      title="Delete conversation"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.75}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+                  </button>
+                )}
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Footer subtle brand info */}

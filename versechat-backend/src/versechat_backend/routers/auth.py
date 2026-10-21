@@ -54,6 +54,51 @@ class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., min_length=32, max_length=256)
 
 
+def _get_grace_response(
+    session: Session,
+    token_hash: str,
+    family_id: uuid.UUID,
+    now: datetime,
+) -> Token | None:
+    rotation = session.scalar(
+        select(RefreshTokenRotation).where(
+            RefreshTokenRotation.token_hash == token_hash,
+            RefreshTokenRotation.family_id == family_id,
+        )
+    )
+    if rotation is None:
+        return None
+
+    grace_expires_at = rotation.grace_expires_at
+    if grace_expires_at.tzinfo is None:
+        grace_expires_at = grace_expires_at.replace(tzinfo=UTC)
+    if grace_expires_at <= now:
+        return None
+
+    try:
+        payload = _rotation_cipher.decrypt(rotation.encrypted_tokens.encode("utf-8"))
+        return Token.model_validate(json.loads(payload))
+    except InvalidToken, ValueError, TypeError:
+        return None
+
+
+def _revoke_refresh_family(
+    session: Session, family_id: uuid.UUID, now: datetime
+) -> None:
+    session.execute(
+        update(RefreshToken)
+        .where(
+            RefreshToken.family_id == family_id,
+            RefreshToken.revoked_at.is_(None),
+        )
+        .values(revoked_at=now)
+    )
+    session.execute(
+        delete(RefreshTokenRotation).where(RefreshTokenRotation.family_id == family_id)
+    )
+    session.commit()
+
+
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: Annotated[Session, Depends(get_db)],
@@ -128,7 +173,6 @@ async def register_user(
 
 @router.post(
     "/token",
-    response_model=Token,
     summary="Obtain JWT access token (Login)",
 )
 async def get_token(
@@ -179,7 +223,6 @@ async def get_token(
 
 @router.post(
     "/refresh",
-    response_model=Token,
     summary="Rotate refresh token and issue a new access token",
 )
 async def refresh_tokens(
@@ -211,51 +254,16 @@ async def refresh_tokens(
     if current is None:
         raise invalid_refresh
 
-    def get_grace_response(token_hash: str, family_id: uuid.UUID) -> Token | None:
-        rotation = session.scalar(
-            select(RefreshTokenRotation).where(
-                RefreshTokenRotation.token_hash == token_hash,
-                RefreshTokenRotation.family_id == family_id,
-            )
-        )
-        if rotation is None:
-            return None
-
-        grace_expires_at = rotation.grace_expires_at
-        if grace_expires_at.tzinfo is None:
-            grace_expires_at = grace_expires_at.replace(tzinfo=UTC)
-        if grace_expires_at <= now:
-            return None
-
-        try:
-            payload = _rotation_cipher.decrypt(
-                rotation.encrypted_tokens.encode("utf-8")
-            )
-            return Token.model_validate(json.loads(payload))
-        except InvalidToken, ValueError, TypeError:
-            return None
-
     if current.revoked_at is not None:
-        grace_response = get_grace_response(presented_hash, current.family_id)
+        grace_response = _get_grace_response(
+            session, presented_hash, current.family_id, now
+        )
         if grace_response is not None:
             return grace_response
 
         # A rotated token was used again. Revoke every still-active token in
         # this login session so a stolen token cannot keep the session alive.
-        session.execute(
-            update(RefreshToken)
-            .where(
-                RefreshToken.family_id == current.family_id,
-                RefreshToken.revoked_at.is_(None),
-            )
-            .values(revoked_at=now)
-        )
-        session.execute(
-            delete(RefreshTokenRotation).where(
-                RefreshTokenRotation.family_id == current.family_id
-            )
-        )
-        session.commit()
+        _revoke_refresh_family(session, current.family_id, now)
         raise invalid_refresh
 
     expires_at = current.expires_at
@@ -267,15 +275,7 @@ async def refresh_tokens(
 
     user = get_user_by_id(session, current.user_id)
     if user is None or not user.is_active:
-        session.execute(
-            update(RefreshToken)
-            .where(
-                RefreshToken.family_id == current.family_id,
-                RefreshToken.revoked_at.is_(None),
-            )
-            .values(revoked_at=now)
-        )
-        session.commit()
+        _revoke_refresh_family(session, current.family_id, now)
         raise invalid_refresh
 
     # Conditional update makes only one concurrent refresh request succeed.
@@ -292,24 +292,13 @@ async def refresh_tokens(
         ),
     )
     if rotation.rowcount != 1:
-        grace_response = get_grace_response(presented_hash, current.family_id)
+        grace_response = _get_grace_response(
+            session, presented_hash, current.family_id, now
+        )
         if grace_response is not None:
             return grace_response
 
-        session.execute(
-            update(RefreshToken)
-            .where(
-                RefreshToken.family_id == current.family_id,
-                RefreshToken.revoked_at.is_(None),
-            )
-            .values(revoked_at=now)
-        )
-        session.execute(
-            delete(RefreshTokenRotation).where(
-                RefreshTokenRotation.family_id == current.family_id
-            )
-        )
-        session.commit()
+        _revoke_refresh_family(session, current.family_id, now)
         raise invalid_refresh
 
     new_refresh_token = secrets.token_urlsafe(48)

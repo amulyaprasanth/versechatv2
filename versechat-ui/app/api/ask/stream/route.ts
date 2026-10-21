@@ -26,8 +26,9 @@ function setAuthCookies(response: NextResponse, tokens: RefreshedTokens) {
 }
 
 function clearAuthCookies(response: NextResponse) {
-  response.cookies.set("token", "", { path: "/", maxAge: 0 });
-  response.cookies.set("refreshToken", "", { path: "/", maxAge: 0 });
+  for (const name of ["token", "refreshToken"]) {
+    response.cookies.set(name, "", { path: "/", maxAge: 0 });
+  }
 }
 
 function unauthorizedResponse() {
@@ -37,6 +38,98 @@ function unauthorizedResponse() {
   );
   clearAuthCookies(response);
   return response;
+}
+
+type RefreshResult =
+  | { tokens: RefreshedTokens }
+  | { error: NextResponse };
+
+async function refreshAuthTokens(refreshToken: string): Promise<RefreshResult> {
+  const response = await fetch(`${process.env.FASTAPI_URL}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!response.ok) return { error: unauthorizedResponse() };
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    return {
+      error: NextResponse.json(
+        { detail: "Authentication service returned an invalid response." },
+        { status: 502 },
+      ),
+    };
+  }
+
+  if (!data || typeof data !== "object") {
+    return {
+      error: NextResponse.json(
+        { detail: "Authentication service returned an invalid response." },
+        { status: 502 },
+      ),
+    };
+  }
+
+  const tokenData = data as {
+    access_token?: unknown;
+    refresh_token?: unknown;
+  };
+  if (
+    typeof tokenData.access_token !== "string" ||
+    !tokenData.access_token.trim() ||
+    typeof tokenData.refresh_token !== "string" ||
+    !tokenData.refresh_token.trim()
+  ) {
+    return {
+      error: NextResponse.json(
+        { detail: "Authentication service returned invalid tokens." },
+        { status: 502 },
+      ),
+    };
+  }
+
+  return {
+    tokens: {
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+    },
+  };
+}
+
+function forwardStreamResponse(
+  response: Response,
+  refreshedTokens?: RefreshedTokens,
+): NextResponse {
+  let nextResponse: NextResponse;
+  if (!response.ok) {
+    nextResponse = new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        "Content-Type":
+          response.headers.get("Content-Type") ?? "application/json",
+      },
+    });
+  } else if (!response.body) {
+    nextResponse = NextResponse.json(
+      { detail: "FastAPI returned no response body" },
+      { status: 500 },
+    );
+  } else {
+    nextResponse = new NextResponse(response.body, {
+      status: response.status,
+      headers: {
+        "Content-Type":
+          response.headers.get("Content-Type") ?? "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+      },
+    });
+  }
+  if (refreshedTokens) setAuthCookies(nextResponse, refreshedTokens);
+  return nextResponse;
 }
 
 export async function POST(request: Request) {
@@ -54,7 +147,6 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("token")?.value;
     const refreshToken = cookieStore.get("refreshToken")?.value;
-
     const sendStreamRequest = (token: string) =>
       fetch(`${process.env.FASTAPI_URL}/ask/stream`, {
         method: "POST",
@@ -65,112 +157,24 @@ export async function POST(request: Request) {
         body: JSON.stringify(body),
       });
 
-    let response: Response | undefined;
+    let response = accessToken
+      ? await sendStreamRequest(accessToken)
+      : undefined;
     let refreshedTokens: RefreshedTokens | undefined;
 
-    if (accessToken) {
-      response = await sendStreamRequest(accessToken);
-    }
-
     if (!response || response.status === 401) {
-      if (!refreshToken) {
-        return unauthorizedResponse();
-      }
+      if (!refreshToken) return unauthorizedResponse();
 
-      const refreshResponse = await fetch(
-        `${process.env.FASTAPI_URL}/auth/refresh`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        },
-      );
+      const refreshResult = await refreshAuthTokens(refreshToken);
+      if ("error" in refreshResult) return refreshResult.error;
 
-      if (!refreshResponse.ok) {
-        return unauthorizedResponse();
-      }
-
-      let refreshData: unknown;
-      try {
-        refreshData = await refreshResponse.json();
-      } catch {
-        return NextResponse.json(
-          { detail: "Authentication service returned an invalid response." },
-          { status: 502 },
-        );
-      }
-
-      if (!refreshData || typeof refreshData !== "object") {
-        return NextResponse.json(
-          { detail: "Authentication service returned an invalid response." },
-          { status: 502 },
-        );
-      }
-
-      const tokenData = refreshData as {
-        access_token?: unknown;
-        refresh_token?: unknown;
-      };
-
-      if (
-        typeof tokenData.access_token !== "string" ||
-        !tokenData.access_token.trim() ||
-        typeof tokenData.refresh_token !== "string" ||
-        !tokenData.refresh_token.trim()
-      ) {
-        return NextResponse.json(
-          { detail: "Authentication service returned invalid tokens." },
-          { status: 502 },
-        );
-      }
-
-      refreshedTokens = {
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-      };
+      refreshedTokens = refreshResult.tokens;
       response = await sendStreamRequest(refreshedTokens.access_token);
-
-      if (response.status === 401) {
-        return unauthorizedResponse();
-      }
+      if (response.status === 401) return unauthorizedResponse();
     }
 
-    if (!response) {
-      return unauthorizedResponse();
-    }
-
-    if (!response.ok) {
-      const errorResponse = new NextResponse(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: {
-          "Content-Type":
-            response.headers.get("Content-Type") ?? "application/json",
-        },
-      });
-      if (refreshedTokens) setAuthCookies(errorResponse, refreshedTokens);
-      return errorResponse;
-    }
-
-    if (!response.body) {
-      const emptyResponse = NextResponse.json(
-        { detail: "FastAPI returned no response body" },
-        { status: 500 },
-      );
-      if (refreshedTokens) setAuthCookies(emptyResponse, refreshedTokens);
-      return emptyResponse;
-    }
-
-    const streamResponse = new NextResponse(response.body, {
-      status: response.status,
-      headers: {
-        "Content-Type":
-          response.headers.get("Content-Type") ?? "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-      },
-    });
-    if (refreshedTokens) setAuthCookies(streamResponse, refreshedTokens);
-    return streamResponse;
+    if (!response) return unauthorizedResponse();
+    return forwardStreamResponse(response, refreshedTokens);
   } catch {
     return NextResponse.json(
       { detail: "Failed to connect to backend" },

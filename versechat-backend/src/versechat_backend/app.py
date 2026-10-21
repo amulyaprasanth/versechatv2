@@ -29,6 +29,7 @@ from versechat_backend.routers.conversations import conversation_router
 
 logger = get_logger()
 _title_refinement_tasks: set[asyncio.Task[None]] = set()
+NEW_CONVERSATION_TITLE = "New conversation"
 
 
 def ensure_conversation(
@@ -109,7 +110,10 @@ def _schedule_title_refinement(conv_id: uuid.UUID, query: str) -> None:
     task.add_done_callback(_title_refinement_tasks.discard)
 
 
-@app.post("/ask/stream")
+@app.post(
+    "/ask/stream",
+    responses={404: {"description": "Conversation not found"}},
+)
 async def stream_message(
     request: ChatRequest,
     user: Annotated[User, Depends(get_current_user)],
@@ -117,8 +121,8 @@ async def stream_message(
 ):
     conversation = ensure_conversation(session, request.conv_id, user)
     should_refine = False
-    if conversation.title in ("New conversation", "", None):
-        conversation.title = request.query[:60].strip() or "New conversation"
+    if conversation.title in (NEW_CONVERSATION_TITLE, "", None):
+        conversation.title = request.query[:60].strip() or NEW_CONVERSATION_TITLE
         should_refine = True
     conversation.updated_at = datetime.now(UTC)
     session.commit()
@@ -143,16 +147,19 @@ async def stream_message(
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
 
-@app.post("/ask", response_model=ChatResponse)
+@app.post(
+    "/ask",
+    responses={404: {"description": "Conversation not found"}},
+)
 async def ask_agent(
     request: ChatRequest,
     user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
-):
+) -> ChatResponse:
     conversation = ensure_conversation(session, request.conv_id, user)
     should_refine = False
-    if conversation.title in ("New conversation", "", None):
-        conversation.title = request.query[:60].strip() or "New conversation"
+    if conversation.title in (NEW_CONVERSATION_TITLE, "", None):
+        conversation.title = request.query[:60].strip() or NEW_CONVERSATION_TITLE
         should_refine = True
     conversation.updated_at = datetime.now(UTC)
     session.commit()

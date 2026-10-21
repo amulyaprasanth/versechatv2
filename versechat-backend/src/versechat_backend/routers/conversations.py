@@ -25,7 +25,7 @@ class CreateConversationRequest(BaseModel):
     title: str | None = None
 
 
-@conversation_router.get("/conversations", response_model=GetConversationsResponse)
+@conversation_router.get("/conversations")
 def get_conversations(
     user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
@@ -53,7 +53,6 @@ def get_conversations(
 
 @conversation_router.post(
     "/conversations",
-    response_model=ConversationStub,
     status_code=status.HTTP_201_CREATED,
 )
 def create_conversation(
@@ -76,10 +75,14 @@ def create_conversation(
 
 
 @conversation_router.get(
-    "/conversations/{conversation_id}", response_model=ConversationDetail
+    "/conversations/{conversation_id}",
+    response_model=ConversationDetail,
+    responses={404: {"description": "Conversation not found"}},
 )
 @conversation_router.get(
-    "/conversation/{conversation_id}", response_model=ConversationDetail
+    "/conversation/{conversation_id}",
+    response_model=ConversationDetail,
+    responses={404: {"description": "Conversation not found"}},
 )
 async def get_conversation(
     conversation_id: uuid.UUID,
@@ -130,10 +133,12 @@ async def get_conversation(
 @conversation_router.delete(
     "/conversations/{conversation_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={404: {"description": "Conversation not found"}},
 )
 @conversation_router.delete(
     "/conversation/{conversation_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={404: {"description": "Conversation not found"}},
 )
 async def delete_conversation(
     conversation_id: uuid.UUID,

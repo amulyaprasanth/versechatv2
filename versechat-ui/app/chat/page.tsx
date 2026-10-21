@@ -133,179 +133,133 @@ const ChatContainer = () => {
     setInputMessage(message);
   };
 
-  // Handle sending a message
+  async function createConversation(): Promise<string> {
+    const response = await fetch("/api/conversations", { method: "POST" });
+    const data: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(getResponseDetail(data) ?? "Could not create a conversation. Please try again.");
+    }
+    if (!data || typeof data !== "object" || !("id" in data) || typeof data.id !== "string") {
+      throw new Error("The server returned an invalid conversation.");
+    }
+
+    setConvId(data.id);
+    await refreshConversations();
+    return data.id;
+  }
+
+  function getResponseDetail(data: unknown): string | undefined {
+    if (!data || typeof data !== "object" || !("detail" in data)) return undefined;
+    return typeof data.detail === "string" ? data.detail : undefined;
+  }
+
+  async function readErrorResponse(response: Response): Promise<string> {
+    const responseText = await response.text();
+    try {
+      return getResponseDetail(JSON.parse(responseText)) ?? "Sorry, I couldn't get a response. Please try again.";
+    } catch {
+      return "Sorry, I couldn't get a response. Please try again.";
+    }
+  }
+
+  async function streamAssistantMessage(response: Response, assistantId: string) {
+    if (!response.body) throw new Error("No response body from server");
+
+    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let hasReceivedToken = false;
+    let finished = false;
+
+    while (!finished) {
+      const { value, done } = await reader.read();
+      finished = done;
+      if (!value) continue;
+
+      const chunk = decoder.decode(value, { stream: !finished });
+      if (chunk && !hasReceivedToken) {
+        hasReceivedToken = true;
+        setIsLoading(false);
+      }
+      appendAssistantChunk(assistantId, chunk);
+    }
+
+    appendAssistantChunk(assistantId, decoder.decode());
+  }
+
+  function appendAssistantChunk(assistantId: string, chunk: string) {
+    if (!chunk) return;
+    setMessages((prev) => prev.map((message) =>
+      message.id === assistantId
+        ? { ...message, content: message.content + chunk }
+        : message,
+    ));
+  }
+
+  function displayAssistantError(assistantId: string, error: unknown) {
+    const content = error instanceof Error && error.message !== "Failed to fetch"
+      ? error.message
+      : "Unable to connect right now. Please check your connection and try again.";
+    const errorMessage: Message = {
+      id: assistantId,
+      role: "assistant",
+      content,
+      error: true,
+    };
+    setMessages((prev) => {
+      if (!prev.some((message) => message.id === assistantId)) {
+        return [...prev, errorMessage];
+      }
+      return prev.map((message) =>
+        message.id === assistantId ? errorMessage : message,
+      );
+    });
+  }
+
   const handleSend = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
     const query = inputMessage;
     setInputMessage("");
-
-    const userMessage: Message = {
+    setMessages((prev) => [...prev, {
       id: crypto.randomUUID(),
       role: "user",
       content: query,
-    };
-
-    setMessages((prev: Message[]) => [...prev, userMessage]);
+    }]);
     setIsLoading(true);
 
     const assistantId = crypto.randomUUID();
     try {
-      let conversationId = convId;
-      if (!conversationId) {
-        const createResponse = await fetch("/api/conversations", {
-          method: "POST",
-        });
-        const createData: unknown = await createResponse.json().catch(() => null);
-
-        if (!createResponse.ok) {
-          const detail =
-            createData &&
-            typeof createData === "object" &&
-            "detail" in createData &&
-            typeof createData.detail === "string"
-              ? createData.detail
-              : "Could not create a conversation. Please try again.";
-          throw new Error(detail);
-        }
-
-        if (
-          !createData ||
-          typeof createData !== "object" ||
-          !("id" in createData) ||
-          typeof createData.id !== "string"
-        ) {
-          throw new Error("The server returned an invalid conversation.");
-        }
-
-        conversationId = createData.id;
-        setConvId(conversationId);
-        await refreshConversations();
-      }
-
+      const conversationId = convId ?? await createConversation();
       const response = await fetch("/api/ask/stream", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          conv_id: conversationId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, conv_id: conversationId }),
       });
 
       if (!response.ok) {
-        const responseText = await response.text();
-        let detail: string | undefined;
-
-        try {
-          const errorData: { detail?: unknown } = JSON.parse(responseText);
-          if (typeof errorData.detail === "string") {
-            detail = errorData.detail;
-          }
-        } catch {
-          // The backend may return a plain-text error body.
-        }
-
         if (response.status === 401) {
           throw new Error("Your session has expired. Please sign in again.");
         }
-
-        throw new Error(detail ?? "Sorry, I couldn't get a response. Please try again.");
+        throw new Error(await readErrorResponse(response));
       }
 
-      if (!response.body) {
-        throw new Error("No response body from server");
-      }
-
-      setMessages((prev: Message[]) => [
-        ...prev,
-        {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-        },
-      ]);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let isFirstToken = false;
-      let done = false;
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-
-        if (value) {
-          const chunk = decoder.decode(value, {
-            stream: !done,
-          });
-
-          if (chunk && !isFirstToken) {
-            isFirstToken = true;
-            setIsLoading(false);
-          }
-
-          setMessages((prev: Message[]) =>
-            prev.map((message) =>
-              message.id === assistantId
-                ? {
-                    ...message,
-                    content: message.content + chunk,
-                  }
-                : message
-            )
-          );
-        }
-      }
-
-      const remaining = decoder.decode();
-      if (remaining) {
-        setMessages((prev: Message[]) =>
-          prev.map((message) =>
-            message.id === assistantId
-              ? {
-                  ...message,
-                  content: message.content + remaining,
-                }
-              : message
-          )
-        );
-      }
-
-      // Re-fetch conversations list so new title or updated time is displayed in sidebar
-      refreshConversations();
+      await streamAssistantMessage(response, assistantId);
+      void refreshConversations();
     } catch (error) {
-      const content =
-        error instanceof Error && error.message !== "Failed to fetch"
-          ? error.message
-          : "Unable to connect right now. Please check your connection and try again.";
-
-      setMessages((prev) => {
-        const errorMessage: Message = {
-          id: assistantId,
-          role: "assistant",
-          content,
-          error: true,
-        };
-
-        return prev.some((message) => message.id === assistantId)
-          ? prev.map((message) =>
-              message.id === assistantId ? errorMessage : message
-            )
-          : [...prev, errorMessage];
-      });
+      displayAssistantError(assistantId, error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const activeConversation = conversations.find((c) => c.id === convId);
-  const activeTitle = activeConversation
-    ? activeConversation.title
-    : messages.length > 0
-    ? "Conversation"
-    : "New Conversation";
+  let activeTitle = "New Conversation";
+  if (activeConversation) {
+    activeTitle = activeConversation.title;
+  } else if (messages.length > 0) {
+    activeTitle = "Conversation";
+  }
 
   return (
     <section id="chat-container" className="relative h-full w-full overflow-hidden">
