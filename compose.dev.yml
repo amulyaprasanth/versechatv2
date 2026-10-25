@@ -5,9 +5,7 @@ services:
     image: postgres:18
     restart: unless-stopped
     env_file:
-      - compose.env
-    secrets:
-      - postgres_password
+      - versechat-backend/.env.dev 
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -34,7 +32,6 @@ services:
 
     env_file:
       - versechat-ui/.env.dev
-      - compose.frontend.env
     volumes:
       - ./versechat-ui:/app:z
       - node_env:/app/node_modules:z
@@ -61,9 +58,6 @@ services:
 
     env_file:
       - versechat-backend/.env.dev
-      - compose.env
-    secrets:
-      - postgres_password
 
     networks:
       - interservice_network
@@ -74,9 +68,6 @@ volumes:
   node_nex:
   postgres_data:
 
-secrets:
-  postgres_password:
-    file: .secrets/postgres_password
 
 networks:
   interservice_network:
