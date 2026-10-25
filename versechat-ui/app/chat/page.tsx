@@ -9,6 +9,7 @@ import ConversationsSidebar from "./ConversationsSidebar";
 import MessagesPanel from "./MessagesPanel";
 
 const ChatContainer = () => {
+  const bannerMessage = process.env.NEXT_PUBLIC_CHAT_BANNER_MESSAGE?.trim() ?? "";
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [convId, setConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +19,7 @@ const ChatContainer = () => {
   const [isFetchingMessages, setIsFetchingMessages] = useState<boolean>(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
 
   // Fetch list of conversations for this user
   const refreshConversations = useCallback(async () => {
@@ -288,31 +290,50 @@ const ChatContainer = () => {
       <div className="absolute inset-0 bg-black/55 pointer-events-none" />
 
       {/* Main Container below navbar */}
-      <div className="absolute inset-0 pt-16 flex flex-row overflow-hidden">
-        {/* Left Component: Conversations List */}
-        <ConversationsSidebar
-          conversations={conversations}
-          activeId={convId ?? ""}
-          isLoading={isFetchingConversations}
-          isDeletingId={isDeletingId}
-          onSelectConversation={handleSelectConversation}
-          onNewChat={handleNewChat}
-          onDeleteConversation={handleDeleteConversation}
-          isOpenMobile={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        />
+      <div className="absolute inset-0 pt-16 flex flex-col overflow-hidden">
+        {bannerMessage && !isBannerDismissed && (
+          <div
+            role="status"
+            className="z-10 flex shrink-0 items-center justify-between gap-4 border-b border-amber-300 bg-amber-100 px-4 py-2.5 text-sm text-amber-950 shadow-sm md:px-6"
+          >
+            <p>{bannerMessage}</p>
+            <button
+              type="button"
+              aria-label="Dismiss notice"
+              onClick={() => setIsBannerDismissed(true)}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-amber-900 transition hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+            >
+              <span aria-hidden="true" className="text-lg leading-none">×</span>
+            </button>
+          </div>
+        )}
 
-        {/* Right Component: Messages & Chat Area */}
-        <MessagesPanel
-          messages={messages}
-          inputMessage={inputMessage}
-          activeTitle={activeTitle}
-          isLoading={isLoading}
-          isFetchingMessages={isFetchingMessages}
-          onInputChange={onMessageChange}
-          onSend={handleSend}
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-        />
+        <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
+          {/* Left Component: Conversations List */}
+          <ConversationsSidebar
+            conversations={conversations}
+            activeId={convId ?? ""}
+            isLoading={isFetchingConversations}
+            isDeletingId={isDeletingId}
+            onSelectConversation={handleSelectConversation}
+            onNewChat={handleNewChat}
+            onDeleteConversation={handleDeleteConversation}
+            isOpenMobile={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          />
+
+          {/* Right Component: Messages & Chat Area */}
+          <MessagesPanel
+            messages={messages}
+            inputMessage={inputMessage}
+            activeTitle={activeTitle}
+            isLoading={isLoading}
+            isFetchingMessages={isFetchingMessages}
+            onInputChange={onMessageChange}
+            onSend={handleSend}
+            onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          />
+        </div>
       </div>
     </section>
   );
