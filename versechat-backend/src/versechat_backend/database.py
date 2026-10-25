@@ -31,8 +31,8 @@ def build_database_url() -> str | URL:
         drivername="postgresql+psycopg",
         username=os.getenv("POSTGRES_USER", "versechat"),
         password=password,
+        port=5432,
         host=os.getenv("POSTGRES_HOST", "postgres"),
-        port=int(os.getenv("POSTGRES_PORT", "5432")),
         database=os.getenv("POSTGRES_DB", "versechat"),
     )
 
