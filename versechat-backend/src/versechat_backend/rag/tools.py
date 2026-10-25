@@ -60,7 +60,9 @@ async def wiki_tool(topic: str, query: str) -> str:
 
 
 if __name__ == "__main__":
-    result = wiki_tool.invoke(
-        input="What is the historical significance of Jerusalem in ancient times?"
-    )
+    # result = wiki_tool.invoke(
+    #     input="What is the historical significance of Jerusalem in ancient times?"
+    # )
+    # print(result)
+    result = bible_search.invoke("john 3 16")
     print(result)
