@@ -15,6 +15,8 @@ ENV NODE_ENV=production
 
 COPY . .
 
+ARG NEXT_PUBLIC_CHAT_BANNER_MESSAGE
+
 RUN npm run build
 
 FROM node:24-slim AS runner
