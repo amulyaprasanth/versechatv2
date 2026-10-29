@@ -54,21 +54,17 @@ def ensure_conversation(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        Base.metadata.create_all(bind=engine)
-        async with AsyncPostgresSaver.from_conn_string(
-            build_langgraph_database_url()
-        ) as checkpointer:
-            await checkpointer.setup()
-            app.state.checkpointer = checkpointer
-            app.state.agent = GraphBuilder(checkpointer).build_graph()
-            try:
-                yield
-            finally:
-                engine.dispose()
-    except Exception:
-        logger.exception("Application failed to initialize")
-        raise
+    Base.metadata.create_all(bind=engine)
+    async with AsyncPostgresSaver.from_conn_string(
+        build_langgraph_database_url()
+    ) as checkpointer:
+        await checkpointer.setup()
+        app.state.checkpointer = checkpointer
+        app.state.agent = GraphBuilder(checkpointer).build_graph()
+        try:
+            yield
+        finally:
+            engine.dispose()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -91,17 +87,12 @@ async def get_health():
 
 
 async def _refine_conversation_title(conv_id: uuid.UUID, query: str):
-    try:
-        refined_title = await generate_conversation_title(query)
-        with Session(engine) as session:
-            conv = session.scalar(
-                select(Conversation).where(Conversation.id == conv_id)
-            )
-            if conv:
-                conv.title = refined_title
-                session.commit()
-    except Exception as e:  # noqa: BLE001
-        logger.warning("Could not generate title for conversation %s: %s", conv_id, e)
+    refined_title = await generate_conversation_title(query)
+    with Session(engine) as session:
+        conv = session.scalar(select(Conversation).where(Conversation.id == conv_id))
+        if conv:
+            conv.title = refined_title
+            session.commit()
 
 
 def _schedule_title_refinement(conv_id: uuid.UUID, query: str) -> None:
@@ -183,7 +174,7 @@ async def ask_agent(
         logger.exception("failed to serve user request")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="internal error occured",
+            detail="Internal server error",
         )
 
     return ChatResponse(id=uuid.uuid4(), role="assistant", content=answer)
