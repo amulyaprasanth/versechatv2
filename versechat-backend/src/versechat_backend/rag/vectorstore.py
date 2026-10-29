@@ -2,11 +2,20 @@ import asyncio
 import os
 
 from langchain_core.documents import Document
-from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_postgres import PGVector
 from tqdm.auto import tqdm
 
 from versechat_backend.bible_preprocessing.utils import load_json
+
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+
+connection = f"postgresql+psycopg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}"
+collection_name = "bible_docs"
 
 
 class VectorStore:
@@ -17,7 +26,13 @@ class VectorStore:
             model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
-        self.vectorstore = InMemoryVectorStore(embedding=self.embeddings)
+        self.vectorstore = PGVector(
+            embeddings=self.embeddings,
+            collection_name=collection_name,
+            connection=connection,
+            use_jsonb=True,
+            async_mode=True,
+        )
 
     async def load_bible(self):
         files = [
