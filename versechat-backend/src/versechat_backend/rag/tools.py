@@ -1,8 +1,12 @@
-import requests
 from langchain.tools import tool
+from langchain_core.tools.retriever import create_retriever_tool
 from pydantic import BaseModel, Field
 
+from versechat_backend.rag.vectorstore import VectorStore
 from versechat_backend.rag.wiki_retriever import WikiRetriever
+
+store = VectorStore("./bible/")
+vs = store.vectorstore
 
 
 class WikiSearchInput(BaseModel):
@@ -16,32 +20,12 @@ class WikiSearchInput(BaseModel):
 
 retriever = WikiRetriever()
 
-
-@tool(
-    "bible_search",
-    description="Performs vector similarity search on bible vector store and returns the results",
+bible_search = create_retriever_tool(
+    retriever=vs.as_retriever(search_kwargs={"k": 10}),
+    name="bible_search",
+    description="Search the bible for relavant verses",
+    response_format="content_and_artifact",
 )
-def bible_search(query: str) -> list[dict]:
-    """Perform a semantic Bible search or fetch a verse by reference."""
-    if not isinstance(query, str) or not query.strip():
-        return [{"error": "Invalid query provided."}]
-
-    try:
-        response = requests.get(
-            f"https://bible-search.antioch.tech/api/search?verse_query={query}",
-            timeout=10,
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        if isinstance(data, list):
-            return data
-        else:
-            return [{"error": "Unexpected API response format."}]
-    except requests.exceptions.RequestException as e:
-        return [{"error": f"Request failed: {e}"}]
-    except RuntimeError as e:
-        return [{"error": f"Unexpected error: {e}"}]
 
 
 @tool(

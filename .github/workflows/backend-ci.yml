@@ -1,5 +1,8 @@
 name: VerseChat Backend CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

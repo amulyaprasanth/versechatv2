@@ -22,3 +22,4 @@ gunicorn
 certifi
 pyjwt
 pwdlib
+langchain-postgres

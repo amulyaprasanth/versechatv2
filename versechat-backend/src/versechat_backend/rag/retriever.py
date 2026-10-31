@@ -8,13 +8,13 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
-from pydantic import PrivateAttr
+from pydantic import Field, PrivateAttr
 
 
 class InMemoryRetriever(BaseRetriever):
     docs: list[Document]
     embeddings: Embeddings
-    k: int = 5
+    k: int = Field(default=5, gt=0)
 
     _vectors: np.ndarray = PrivateAttr()
 

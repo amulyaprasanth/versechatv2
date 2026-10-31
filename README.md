@@ -66,9 +66,8 @@ flowchart TD
 
 ## Acknowledgements
 
-The Bible retrieval component of this project is based on
-[Bible Vector Search](https://github.com/tim-hub/bible-vector-search)
-by [tim-hub](https://github.com/tim-hub).
+Raw bible data was taken from this [Repo](https://github.com/thiagobodruk/bible)
+by [thiagobodruk](https://github.com/thiagobodruk).
 
 We are grateful to the author for making the project available under
 the MIT License.
