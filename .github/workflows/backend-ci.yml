@@ -1,5 +1,8 @@
 name: VerseChat Backend CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -57,4 +60,5 @@ jobs:
       - name: Run unit tests
         env:
           GROQ_API_KEY: ${{secrets.GROQ_API_KEY}}
+          DATABASE_URL: postgresql+psycopg://test:test@localhost:5432/test
         run: uv run pytest tests/unit

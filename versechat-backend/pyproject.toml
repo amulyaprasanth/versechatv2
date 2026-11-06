@@ -12,6 +12,7 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "asyncio>=4.0.0",
     "asyncpg>=0.31.0",
+    "bm25s>=0.3.16",
     "certifi>=2026.7.22",
     "cryptography>=50.0.0",
     "ddgs>=9.14.4",
@@ -23,11 +24,13 @@ dependencies = [
     "httpx>=0.28.1",
     "httpx2>=2.10.0",
     "ipython>=9.17.1",
+    "jq>=1.13.0",
     "langchain>=1.3.14",
     "langchain-classic>=1.0.8",
     "langchain-community>=0.4.2",
     "langchain-groq>=1.1.3",
     "langchain-huggingface>=1.2.2",
+    "langchain-postgres>=0.0.19",
     "langchain-text-splitters>=1.1.2",
     "langgraph>=1.2.10",
     "langgraph-checkpoint-postgres>=3.2.0",
@@ -35,12 +38,15 @@ dependencies = [
     "psycopg[binary]>=3.2.0",
     "pwdlib>=0.3.1",
     "pyjwt>=2.13.0",
+    "pystemmer>=3.1.0",
     "pytest-asyncio>=1.4.0",
     "python-dotenv>=1.2.2",
+    "rank-bm25>=0.2.2",
     "redis[asyncio]>=8.1.0",
     "sentence-transformers>=5.7.0",
     "sqlalchemy>=2.0.51",
     "torch>=2.13.0",
+    "types-tqdm>=4.70.0.20260906",
     "uvicorn>=0.52.1",
     "wikipedia>=1.4.0",
     "wikipedia-api>=0.15.0",
@@ -66,8 +72,8 @@ typeCheckingMode = "standard"
 
 
 [[tool.mypy.overrides]]
-module = ["wikipediaapi.*"]
-follow_untyped_imports = true
+module = ["wikipediaapi.*", "bm25s", "bm25s.*", "Stemmer", "Stemmer.*"]
+ignore_missing_imports = true
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
@@ -76,3 +82,4 @@ explicit = true
 
 [[tool.uv.sources.torch]]
 index = "pytorch-cpu"
+

@@ -49,7 +49,7 @@ def test_ask_returns_500_when_agent_fails(client: TestClient, monkeypatch):
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "internal error occured"}
+    assert response.json() == {"detail": "Internal server error"}
     failing_ainvoke.assert_awaited_once()
 
 

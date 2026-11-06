@@ -32,9 +32,10 @@ async def generate_conversation_title(first_message: str) -> str:
             title = re.sub(r"\s+", " ", response.content).strip().strip("\"'")
             if title:
                 return title[:255]
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.warning(
-            "Could not generate a conversation title; using the message instead"
+            "Could not generate a conversation title; using the message instead",
+            exc_info=True,
         )
 
     if len(cleaned_message) <= 255:
