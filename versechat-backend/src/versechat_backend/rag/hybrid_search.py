@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections import defaultdict
 
 import bm25s
@@ -11,10 +12,13 @@ from versechat_backend.utils import convert_bible_documents
 
 logger = get_logger()
 
+SEMANTIC_K = os.getenv("SEMANTIC_K", "10")
+KEYWORD_K = os.getenv("KEYWORD_K", "10")
+FINAL_K = os.getenv("FINAL_K", "8")
+
 
 class HybridSearch:
-    def __init__(self, k: int = 5):
-        self.k = k
+    def __init__(self):
 
         self.bm25 = BM25Retriever()
         self.vectorstore = VectorStore()
@@ -22,8 +26,8 @@ class HybridSearch:
         self.ids: list[str] = []
 
     @classmethod
-    async def create(cls, k: int = 5):
-        instance = cls(k)
+    async def create(cls):
+        instance = cls()
         await instance.setup_search()
         return instance
 
@@ -46,7 +50,7 @@ class HybridSearch:
     async def asemantic_search(
         self,
         query: str,
-        k: int = 5,
+        k: int = int(SEMANTIC_K),
     ) -> list[Document]:
         """Perform asynchronous semantic similarity search against PGVector.
 
@@ -59,7 +63,7 @@ class HybridSearch:
         """
         return await self.vectorstore.store.asimilarity_search(query, k)
 
-    def keyword_search(self, query: str, k: int = 5) -> list[dict]:
+    def keyword_search(self, query: str, k: int = int(KEYWORD_K)) -> list[dict]:
         """Performs key word search aginst the bm25 index"""
         tokenized_query = bm25s.tokenize(
             [query], stopwords=self.bm25.corpus_lang, stemmer=self.bm25.stemmer
@@ -78,7 +82,7 @@ class HybridSearch:
             if index >= 0
         ]
 
-    async def ahybrid_search(self, query: str, top_k: int = 5, k: int = 60):
+    async def ahybrid_search(self, query: str, top_k: int = int(FINAL_K), k: int = 60):
         semantic_results, keyword_results = await asyncio.gather(
             self.asemantic_search(query),
             asyncio.to_thread(self.keyword_search, query),
