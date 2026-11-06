@@ -8,15 +8,27 @@ from versechat_backend.rag.wiki_retriever import WikiRetriever
 
 
 class WikiSearchInput(BaseModel):
-    topic: str = Field(
-        description="The Wikipedia article topic/title to search (e.g., 'Jerusalem', 'Quantum computing')"
-    )
+    topic: str = Field(description="The Wikipedia article topic/title to search.")
     query: str = Field(
-        description="The specific search question or query to answer using the Wikipedia article content."
+        description="The specific question to answer using Wikipedia content."
     )
 
 
-hybrid_search = asyncio.run(HybridSearch.create())
+class SearchService:
+    def __init__(self) -> None:
+        self._hybrid_search: HybridSearch | None = None
+        self._lock = asyncio.Lock()
+
+    async def get_hybrid_search(self) -> HybridSearch:
+        if self._hybrid_search is None:
+            async with self._lock:
+                if self._hybrid_search is None:
+                    self._hybrid_search = await HybridSearch.create()
+
+        return self._hybrid_search
+
+
+search_service = SearchService()
 retriever = WikiRetriever()
 
 
@@ -27,6 +39,8 @@ retriever = WikiRetriever()
 )
 async def bible_search(query: str):
     """Searches the Bible using hybrid retrieval."""
+
+    hybrid_search = await search_service.get_hybrid_search()
 
     results = await hybrid_search.ahybrid_search(query)
 
