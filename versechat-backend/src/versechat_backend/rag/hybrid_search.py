@@ -77,7 +77,6 @@ class HybridSearch:
             for index, score in zip(indices, scores)
             if index >= 0
         ]
-        return results
 
     async def ahybrid_search(self, query: str, top_k: int = 5, k: int = 60):
         semantic_results, keyword_results = await asyncio.gather(

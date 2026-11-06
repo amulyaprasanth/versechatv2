@@ -13,7 +13,7 @@ def load_json(path: str):
 
         return content
     except FileNotFoundError:
-        logger.exception(f"File not found at {path}")
+        logger.exception("Json Configuration file not found")
         raise
     except json.JSONDecodeError:
         logger.exception("Couldn't decode Json")
