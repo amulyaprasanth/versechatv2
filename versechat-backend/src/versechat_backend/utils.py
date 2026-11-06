@@ -1,3 +1,4 @@
+import asyncio
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -5,14 +6,18 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
+from langchain_core.documents import Document
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from tqdm.auto import tqdm
 
+from versechat_backend.bible_preprocessing.utils import load_json
+from versechat_backend.core.logger import get_logger
 from versechat_backend.models.db import User
 
-load_dotenv()
+logger = get_logger()
 load_dotenv(".env.dev")
 
 SECRET_KEY = os.getenv(
@@ -117,3 +122,70 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     to_encode.update({"exp": expire, "iat": now})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def load_book(book_path: str) -> list[Document]:
+    """Load a Bible book from a JSON file and convert its verses
+    into LangChain Document objects.
+
+    Args:
+        book_path: Path to the Bible book JSON file.
+
+    Returns:
+        A list of Document objects containing verse text and metadata.
+    """
+    docs = []
+    book_dict = load_json(book_path)
+
+    name = book_dict["name"]
+
+    for chapter in book_dict["chapters"]:
+        for verse in chapter:
+            docs.append(
+                Document(
+                    page_content=verse["text"],
+                    metadata={
+                        "book_name": name,
+                        "chapter": verse["chapter"],
+                        "verse": verse["verse"],
+                    },
+                )
+            )
+
+    return docs
+
+
+async def convert_bible_documents(bible_dir_path: str):
+    """Load Bible books, convert verses into LangChain documents.
+
+    Returns:
+        A tuple containing:
+            - all_docs: List of processed Bible documents.
+            - ids: Unique identifiers generated for each verse.
+    """
+    if not os.path.isdir(bible_dir_path):
+        raise FileNotFoundError(bible_dir_path)
+
+    files = [
+        os.path.join(bible_dir_path, filename)
+        for filename in os.listdir(bible_dir_path)
+        if filename.endswith(".json")
+    ]
+    all_docs = []
+    tasks = [asyncio.to_thread(load_book, filepath) for filepath in files]
+
+    for task in tqdm(
+        asyncio.as_completed(tasks),
+        total=len(tasks),
+        leave=False,
+        desc="Loading Bible...",
+    ):
+        docs = await task
+        all_docs.extend(docs)
+
+    ids = [
+        f"{doc.metadata['book_name']}_{doc.metadata['chapter']}_{doc.metadata['verse']}"
+        for doc in all_docs
+    ]
+
+    return all_docs, ids

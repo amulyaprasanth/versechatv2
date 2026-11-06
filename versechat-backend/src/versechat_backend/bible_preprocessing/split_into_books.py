@@ -9,7 +9,7 @@ logger = get_logger()
 
 def main():
     # load the single json
-    content = load_json("bible/raw/en_kjv.json")
+    content = load_json("bible/raw/en_niv.json")
 
     # create a file for every chapter and save it in a folder
     os.makedirs("bible/books", exist_ok=True)

@@ -1,12 +1,10 @@
+import asyncio
+
 from langchain.tools import tool
-from langchain_core.tools.retriever import create_retriever_tool
 from pydantic import BaseModel, Field
 
-from versechat_backend.rag.vectorstore import VectorStore
+from versechat_backend.rag.hybrid_search import HybridSearch
 from versechat_backend.rag.wiki_retriever import WikiRetriever
-
-store = VectorStore("./bible/")
-vs = store.vectorstore
 
 
 class WikiSearchInput(BaseModel):
@@ -18,14 +16,39 @@ class WikiSearchInput(BaseModel):
     )
 
 
+hybrid_search = asyncio.run(HybridSearch.create())
 retriever = WikiRetriever()
 
-bible_search = create_retriever_tool(
-    retriever=vs.as_retriever(search_kwargs={"k": 10}),
-    name="bible_search",
-    description="Search the bible for relavant verses",
+
+@tool(
+    "bible_search",
+    description="Search the Bible for relevant verses.",
     response_format="content_and_artifact",
 )
+async def bible_search(query: str):
+    """Searches the Bible using hybrid retrieval."""
+
+    results = await hybrid_search.ahybrid_search(query)
+
+    if not results:
+        return "No relevant Bible verses found.", []
+
+    formatted_results = []
+
+    for doc in results:
+        metadata = doc.metadata
+
+        book = metadata.get("book_name", "Unknown")
+        chapter = metadata.get("chapter", "")
+        verse = metadata.get("verse", "")
+
+        reference = f"{book} {chapter}:{verse}"
+
+        formatted_results.append(f"Reference: {reference}\nVerse: {doc.page_content}")
+
+    content = "\n\n".join(formatted_results)
+
+    return content, results
 
 
 @tool(
