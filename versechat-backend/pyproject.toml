@@ -72,8 +72,8 @@ typeCheckingMode = "standard"
 
 
 [[tool.mypy.overrides]]
-module = ["wikipediaapi.*"]
-follow_untyped_imports = true
+module = ["wikipediaapi.*", "bm25s", "bm25s.*", "Stemmer", "Stemmer.*"]
+ignore_missing_imports = true
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
@@ -82,3 +82,4 @@ explicit = true
 
 [[tool.uv.sources.torch]]
 index = "pytorch-cpu"
+

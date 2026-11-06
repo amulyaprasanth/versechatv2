@@ -1,6 +1,7 @@
 import asyncio
 import os
 import uuid
+from collections.abc import Coroutine
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -11,7 +12,6 @@ from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from tqdm.auto import tqdm
 
 from versechat_backend.bible_preprocessing.utils import load_json
 from versechat_backend.core.logger import get_logger
@@ -172,14 +172,11 @@ async def convert_bible_documents(bible_dir_path: str):
         if filename.endswith(".json")
     ]
     all_docs = []
-    tasks = [asyncio.to_thread(load_book, filepath) for filepath in files]
-
-    for task in tqdm(
-        asyncio.as_completed(tasks),
-        total=len(tasks),
-        leave=False,
-        desc="Loading Bible...",
-    ):
+    tasks: list[Coroutine] = [
+        asyncio.to_thread(load_book, filepath) for filepath in files
+    ]
+    task: Coroutine
+    for task in asyncio.as_completed(tasks):
         docs = await task
         all_docs.extend(docs)
 

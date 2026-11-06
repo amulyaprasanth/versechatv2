@@ -19,7 +19,7 @@ class HybridSearch:
         self.bm25 = BM25Retriever()
         self.vectorstore = VectorStore()
         self.bm25_retriever = None
-        self.ids = []
+        self.ids: list[str] = []
 
     @classmethod
     async def create(cls, k: int = 5):
@@ -59,7 +59,7 @@ class HybridSearch:
         """
         return await self.vectorstore.store.asimilarity_search(query, k)
 
-    def keyword_search(self, query: str, k: int = 5):
+    def keyword_search(self, query: str, k: int = 5) -> list[dict]:
         """Performs key word search aginst the bm25 index"""
         tokenized_query = bm25s.tokenize(
             [query], stopwords=self.bm25.corpus_lang, stemmer=self.bm25.stemmer
@@ -88,7 +88,7 @@ class HybridSearch:
         semantic_ids = [doc.id for doc in semantic_results]
         keyword_ids = [doc["id"] for doc in keyword_results]
 
-        rrf_scores = defaultdict(float)
+        rrf_scores: dict[str, float] = defaultdict(float)
         for ids in [semantic_ids, keyword_ids]:
             for rank, id in enumerate(ids, start=1):
                 rrf_scores[id] += 1.0 / (k + rank)
