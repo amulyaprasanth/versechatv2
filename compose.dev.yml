@@ -2,10 +2,11 @@ name: "versechat-dev"
 
 services:
   postgres:
-    image: postgres:18
+    build:
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
-      - versechat-backend/.env.dev 
+      - versechat-backend/.env.dev
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -33,9 +34,9 @@ services:
     env_file:
       - versechat-ui/.env.dev
     volumes:
-      - ./versechat-ui:/app:z
-      - node_env:/app/node_modules:z
-      - node_nex:/app/.next:z
+      - ./versechat-ui:/app
+      - node_env:/app/node_modules
+      - node_nex:/app/.next
 
     networks:
       - interservice_network
@@ -53,8 +54,8 @@ services:
       - "8000:8000"
 
     volumes:
-      - ./versechat-backend:/app:z
-      - api_venv:/app/.venv:z
+      - ./versechat-backend:/app
+      - api_venv:/app/.venv
 
     env_file:
       - versechat-backend/.env.dev
@@ -67,7 +68,6 @@ volumes:
   node_env:
   node_nex:
   postgres_data:
-
 
 networks:
   interservice_network:

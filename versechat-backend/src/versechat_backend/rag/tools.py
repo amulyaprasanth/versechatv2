@@ -1,47 +1,68 @@
-import requests
+import asyncio
+
 from langchain.tools import tool
 from pydantic import BaseModel, Field
 
+from versechat_backend.rag.hybrid_search import HybridSearch
 from versechat_backend.rag.wiki_retriever import WikiRetriever
 
 
 class WikiSearchInput(BaseModel):
-    topic: str = Field(
-        description="The Wikipedia article topic/title to search (e.g., 'Jerusalem', 'Quantum computing')"
-    )
+    topic: str = Field(description="The Wikipedia article topic/title to search.")
     query: str = Field(
-        description="The specific search question or query to answer using the Wikipedia article content."
+        description="The specific question to answer using Wikipedia content."
     )
 
 
+class SearchService:
+    def __init__(self) -> None:
+        self._hybrid_search: HybridSearch | None = None
+        self._lock = asyncio.Lock()
+
+    async def get_hybrid_search(self) -> HybridSearch:
+        if self._hybrid_search is None:
+            async with self._lock:
+                if self._hybrid_search is None:
+                    self._hybrid_search = await HybridSearch.create()
+
+        return self._hybrid_search
+
+
+search_service = SearchService()
 retriever = WikiRetriever()
 
 
 @tool(
     "bible_search",
-    description="Performs vector similarity search on bible vector store and returns the results",
+    description="Search the Bible for relevant verses.",
+    response_format="content_and_artifact",
 )
-def bible_search(query: str) -> list[dict]:
-    """Perform a semantic Bible search or fetch a verse by reference."""
-    if not isinstance(query, str) or not query.strip():
-        return [{"error": "Invalid query provided."}]
+async def bible_search(query: str):
+    """Searches the Bible using hybrid retrieval."""
 
-    try:
-        response = requests.get(
-            f"https://bible-search.antioch.tech/api/search?verse_query={query}",
-            timeout=10,
-        )
-        response.raise_for_status()
-        data = response.json()
+    hybrid_search = await search_service.get_hybrid_search()
 
-        if isinstance(data, list):
-            return data
-        else:
-            return [{"error": "Unexpected API response format."}]
-    except requests.exceptions.RequestException as e:
-        return [{"error": f"Request failed: {e}"}]
-    except RuntimeError as e:
-        return [{"error": f"Unexpected error: {e}"}]
+    results = await hybrid_search.ahybrid_search(query)
+
+    if not results:
+        return "No relevant Bible verses found.", []
+
+    formatted_results = []
+
+    for doc in results:
+        metadata = doc.metadata
+
+        book = metadata.get("book_name", "Unknown")
+        chapter = metadata.get("chapter", "")
+        verse = metadata.get("verse", "")
+
+        reference = f"{book} {chapter}:{verse}"
+
+        formatted_results.append(f"Reference: {reference}\nVerse: {doc.page_content}")
+
+    content = "\n\n".join(formatted_results)
+
+    return content, results
 
 
 @tool(
