@@ -14,7 +14,7 @@ def main():
 def annotate_bible(bible_dir_path: str = "./bible/books"):
     """Iterates over all the books and calls annotate book fn"""
     files = os.listdir(bible_dir_path)
-
+    logger.info("extracting references and rewriting...")
     for file in files:
         annotate_book(bible_dir_path, file)
 
@@ -33,15 +33,12 @@ def annotate_book(bible_path: str, book_json: str):
 
     book["chapters"] = new_chapters
 
-    logger.info(f"Updating {book['name']} with new references")
-
     with open(json_path, "w") as f:
         json.dump(book, f)
 
 
 def annotate_chapter(chapter: list, chapter_number: int):
     new_chapter = []
-
     for idx, verse in enumerate(chapter):
         new_chapter.append({"text": verse, "chapter": chapter_number, "verse": idx + 1})
     return new_chapter
